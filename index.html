@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f6f0" />
+    <meta
+      name="description"
+      content="A quiet space to write without second-guessing. Choose a little time, follow a thought, and keep going."
+    />
+    <title>Vanishing Words — a little less thinking</title>
+    <link
+      rel="preload"
+      href="assets/InterVariable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="assets/InstrumentSerif-Regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="assets/InstrumentSerif-Italic.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="site-header">
+        <a
+          href="./"
+          class="wordmark"
+          id="home-link"
+          aria-label="Vanishing Words home"
+          >vanishing <em>words</em
+          ><span class="wordmark-dot" aria-hidden="true">.</span></a
+        >
+        <button type="button" class="text-button" id="about-button">
+          How it works
+        </button>
+      </header>
+      <p id="storage-warning" class="storage-warning" role="alert" hidden></p>
+      <main>
+        <button
+          type="button"
+          id="controls-toggle"
+          class="controls-toggle"
+          hidden
+          aria-label="Session options"
+          aria-controls="writing-controls"
+          aria-expanded="false"
+          title="Session options (Esc)"
+        >
+          <span aria-hidden="true">···</span>
+        </button>
+        <section
+          id="writing-controls"
+          class="writing-controls"
+          hidden
+          aria-label="Session options"
+        >
+          <div class="session-top" id="session-top" hidden>
+            <span id="mode-label">Journal</span
+            ><span class="header-divider" aria-hidden="true"></span
+            ><span
+              id="session-clock"
+              role="timer"
+              aria-label="Session time remaining"
+              >10:00</span
+            ><button
+              type="button"
+              class="text-button"
+              id="finish-button"
+              title="Finish and keep your writing (⌘⇧Enter / Ctrl+Shift+Enter)"
+            >
+              Finish <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <p id="session-word-count" class="session-detail">0 words</p>
+          <fieldset class="paper-tones">
+            <legend>Page color</legend>
+            <div class="tone-options">
+              <label
+                ><input
+                  type="radio"
+                  name="paper-tone"
+                  value="paper"
+                  checked
+                /><span class="swatch tone-paper"></span
+                ><span>Paper</span></label
+              >
+              <label
+                ><input type="radio" name="paper-tone" value="sand" /><span
+                  class="swatch tone-sand"
+                ></span
+                ><span>Sand</span></label
+              >
+              <label
+                ><input type="radio" name="paper-tone" value="sage" /><span
+                  class="swatch tone-sage"
+                ></span
+                ><span>Sage</span></label
+              >
+              <label
+                ><input type="radio" name="paper-tone" value="mist" /><span
+                  class="swatch tone-mist"
+                ></span
+                ><span>Mist</span></label
+              >
+            </div>
+          </fieldset>
+          <label class="progress-choice"
+            ><input type="checkbox" id="show-progress" name="show-progress" />
+            Show pause indicator</label
+          >
+          <p id="idle-status" class="session-detail">
+            The clock begins with your first word.
+          </p>
+          <p class="session-detail">Esc to return to your words.</p>
+        </section>
+
+        <section class="landing" id="landing" aria-labelledby="hero-title">
+          <div class="landing-copy">
+            <h1 id="hero-title">Let it <em>out.</em></h1>
+            <p class="intro">
+              A thought doesn’t have to be perfect to be worth writing.
+            </p>
+            <form id="setup-form">
+              <fieldset class="mode-field">
+                <legend class="sr-only">Writing mode</legend>
+                <div class="choices mode-choices">
+                  <label
+                    ><input
+                      type="radio"
+                      name="mode"
+                      value="journal"
+                      checked
+                    /><span>Journal</span></label
+                  >
+                  <label
+                    ><input type="radio" name="mode" value="rant" /><span
+                      >Rant</span
+                    ></label
+                  >
+                </div>
+              </fieldset>
+              <p id="mode-description" class="mode-description">
+                A page to keep.
+              </p>
+              <details id="session-settings" class="session-settings">
+                <summary>
+                  <span>Session settings</span
+                  ><span id="settings-summary">10 min · 45 sec pause</span>
+                </summary>
+                <div class="settings-fields">
+                  <div class="duration-field custom-row" id="custom-row">
+                    <label for="custom-minutes">Write for</label>
+                    <input
+                      type="number"
+                      name="custom-minutes"
+                      id="custom-minutes"
+                      min="1"
+                      max="240"
+                      step="1"
+                      value="10"
+                      required
+                      inputmode="numeric"
+                    />
+                    <span>minutes</span>
+                  </div>
+                  <div class="delay-field">
+                    <label for="grace-value">Delete after</label>
+                    <div class="delay-controls">
+                      <input
+                        type="number"
+                        id="grace-value"
+                        name="grace-value"
+                        value="45"
+                        min="1"
+                        max="600"
+                        step="any"
+                        required
+                      /><label class="sr-only" for="grace-unit"
+                        >Deletion delay unit</label
+                      ><select id="grace-unit" name="grace-unit">
+                        <option value="seconds">seconds</option>
+                        <option value="minutes">minutes</option></select
+                      ><span>without typing</span>
+                    </div>
+                  </div>
+                </div>
+              </details>
+              <p class="grace-note" id="grace-note">
+                Pause for 45 seconds and your last words begin to fade.
+              </p>
+              <p class="rant-note" id="rant-note" hidden>
+                Nothing is saved. Your rant is erased when time ends, you
+                finish, or you leave. No recovery.
+              </p>
+              <div class="begin-row">
+                <button type="submit" class="primary" id="begin-button">
+                  Begin writing <span aria-hidden="true">↗</span></button
+                ><kbd class="shortcut" aria-label="Command or Control Enter"
+                  >⌘ Enter</kbd
+                >
+              </div>
+              <p class="recovery-note" id="recovery-note">
+                <button type="button" class="inline-link" id="recovery-info">
+                  How recovery works
+                </button>
+              </p>
+            </form>
+          </div>
+          <figure class="landscape">
+            <img
+              src="assets/landscape.jpg"
+              alt="Sunlight finding its way through a quiet, misty forest."
+              width="1000"
+              height="1400"
+              fetchpriority="high"
+            />
+            <div class="photo-wash" aria-hidden="true"></div>
+          </figure>
+        </section>
+        <section
+          class="writing"
+          id="writing"
+          hidden
+          aria-label="Writing session"
+        >
+          <div class="completion-heading" id="completion-heading" hidden>
+            <p class="eyebrow" id="completion-eyebrow">
+              A little time, well spent.
+            </p>
+            <h1 id="completion-title" tabindex="-1">
+              You made <em>space.</em>
+            </h1>
+            <p id="completion-copy">
+              Your session is finished. Your words are yours to keep.
+            </p>
+          </div>
+          <div class="suspended" id="suspended" hidden>
+            <div>
+              <p class="eyebrow">Your words are safe.</p>
+              <h2>A breath, not an ending.</h2>
+              <p id="suspend-reason">
+                You stepped away, so we stopped the clock. Nothing disappears
+                while you’re away.
+              </p>
+            </div>
+            <div class="resume-actions">
+              <button type="button" class="primary" id="resume-button">
+                Resume writing <span aria-hidden="true">↗</span></button
+              ><button type="button" class="text-button" id="keep-button">
+                Finish & keep words
+              </button>
+            </div>
+          </div>
+          <div class="page-label">
+            <span id="page-label">Follow the thought.</span
+            ><span class="count" id="word-count">0 words</span>
+          </div>
+          <div class="editor-wrap" id="editor-wrap">
+            <label class="sr-only" for="editor">Your writing</label>
+            <textarea
+              id="editor"
+              name="writing"
+              placeholder="Start anywhere…"
+              spellcheck="true"
+              autocomplete="off"
+              aria-describedby="editor-help"
+            ></textarea>
+            <div
+              class="dissolve-mirror"
+              id="dissolve-mirror"
+              aria-hidden="true"
+            ></div>
+          </div>
+          <p class="sr-only" id="editor-help">
+            Write normally. The timer begins with your first word. Inactivity
+            deletes the last word after your chosen pause. Command or Control
+            Shift Enter finishes the session: Journal keeps your words; Rant
+            erases them.
+          </p>
+          <div class="writing-bottom" id="writing-bottom">
+            <div class="idle-track" aria-hidden="true">
+              <div id="idle-fill"></div>
+            </div>
+          </div>
+          <div class="completion-actions" id="completion-actions" hidden>
+            <div class="export-source">
+              <p id="export-source">Current text</p>
+              <button type="button" class="text-button" id="recovery-button">
+                Recovery <span aria-hidden="true">↗</span></button
+              ><button
+                type="button"
+                class="inline-link"
+                id="current-button"
+                hidden
+              >
+                Back to current text
+              </button>
+            </div>
+            <div class="export-buttons">
+              <button type="button" class="text-button" id="copy-button">
+                Copy text</button
+              ><button type="button" class="text-button" id="txt-button">
+                Download .txt</button
+              ><button type="button" class="text-button" id="md-button">
+                Download .md</button
+              ><button type="button" class="primary" id="new-button">
+                A fresh page <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer class="site-footer" id="site-footer">
+        <p>Less editing. More discovering.</p>
+        <p>
+          <span class="privacy-dot" aria-hidden="true"></span>Just you & the
+          page. <span id="privacy-label">Saved on this device.</span>
+        </p>
+      </footer>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <dialog id="about-dialog" aria-labelledby="about-title">
+      <div class="dialog-top">
+        <p class="eyebrow">A small writing ritual.</p>
+        <button
+          type="button"
+          class="text-button"
+          data-close
+          aria-label="Close introduction"
+        >
+          Close ×
+        </button>
+      </div>
+      <h2 id="about-title">Let the next word <em>come.</em></h2>
+      <p>
+        Choose your time. Begin with a thought, not a plan. The clock starts
+        with your first word.
+      </p>
+      <p>
+        Set two independent timers: <strong>Write for</strong> controls your
+        session length (1–240 minutes). <strong>Delete after</strong> controls
+        how long you can stop typing (1 second–10 minutes). Changing modes never
+        changes your chosen delay. Keep typing to stop words disappearing.
+      </p>
+      <h3>Rant. Then let it go.</h3>
+      <p>
+        Rant is disposable. It has no autosave, copy/export action, or recovery
+        snapshots. Everything remaining is erased when the session ends, you end
+        it early, or you leave this page. Its session deadline continues while
+        you switch tabs. This is not secure erasure or protection against
+        screenshots or browser/OS memory.
+      </p>
+      <h3>A way back in Journal.</h3>
+      <p>
+        Recovery keeps exact snapshots from before automatic deletions—not a
+        stitched-together transcript. We keep the original before the first
+        deletion, plus up to 19 recent snapshots. Your manual edits and removed
+        history aren’t reconstructed.
+      </p>
+      <p>
+        In Journal, switching tabs safely stops the clock until you resume.
+        Reloaded drafts also wait for you. Everything stays in this browser’s
+        local storage; nothing is sent to a server. Export important writing.
+      </p>
+      <p class="dialog-shortcuts">
+        <kbd>⌘ / Ctrl Enter</kbd> Begin<br /><kbd>⌘ / Ctrl ⇧ Enter</kbd> Finish
+        & keep words
+      </p>
+      <button type="button" class="primary" data-close>
+        Make a little space <span aria-hidden="true">↗</span>
+      </button>
+    </dialog>
+    <dialog id="recovery-dialog" aria-labelledby="recovery-title">
+      <div class="dialog-top">
+        <p class="eyebrow">A way back.</p>
+        <button
+          type="button"
+          class="text-button"
+          data-close
+          aria-label="Close recovery"
+        >
+          Close ×
+        </button>
+      </div>
+      <h2 id="recovery-title">Not quite <em>gone.</em></h2>
+      <p>
+        Exact versions from before automatic deletion. Choosing one changes your
+        preview and export—not your current text. No versions are stitched
+        together.
+      </p>
+      <label for="snapshot-choice" class="snapshot-label"
+        >Choose a saved version</label
+      ><select name="snapshot" id="snapshot-choice"></select>
+      <p id="archive-note" class="archive-note"></p>
+      <textarea
+        id="snapshot-preview"
+        name="snapshot-preview"
+        readonly
+        aria-label="Recovery snapshot preview"
+      ></textarea
+      ><button type="button" class="primary" id="use-snapshot">
+        Use this version <span aria-hidden="true">↗</span>
+      </button>
+    </dialog>
+    <noscript
+      ><p class="storage-warning">
+        JavaScript is needed for the writing timer. Your browser is not sending
+        any writing anywhere.
+      </p></noscript
+    >
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
