@@ -1186,13 +1186,14 @@ dialog .primary {
 
 /* Two-mode arrival: one decision, with timing tucked away. */
 body:not(.session-view) #app {
+  position: relative;
   max-width: none;
   padding: 0;
 }
 body:not(.session-view) .site-header {
   position: relative;
   z-index: 2;
-  width: 54%;
+  width: 100%;
   height: 110px;
   padding: 0 clamp(28px, 5vw, 80px);
   gap: 16px;
@@ -1207,11 +1208,13 @@ body:not(.session-view) .site-footer {
   margin: 0;
 }
 .landing-copy {
-  width: 54%;
+  position: relative;
+  z-index: 1;
+  width: min(100%, 640px);
   padding: clamp(38px, 9vh, 100px) clamp(28px, 5vw, 80px) 64px;
 }
 .landing h1 {
-  font-size: clamp(76px, 7.7vw, 124px);
+  font-size: clamp(76px, 7vw, 104px);
   margin: 0 0 22px;
   max-width: 12ch;
   letter-spacing: -3px;
@@ -1222,23 +1225,33 @@ body:not(.session-view) .site-footer {
   margin: 0 0 42px;
 }
 .landing .landscape {
-  position: fixed;
+  position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 46%;
-  height: 100dvh;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
   min-height: 0;
   max-height: none;
   border-radius: 0;
   margin: 0;
 }
 .landing .landscape img {
-  filter: saturate(0.82) brightness(0.78);
+  filter: saturate(0.78) brightness(0.9);
   object-position: 50% 50%;
 }
 .landing .photo-wash {
-  background: linear-gradient(90deg, rgb(13 27 19 / 12%), transparent 40%);
+  background:
+    linear-gradient(180deg, rgb(13 24 19 / 70%), transparent 30%),
+    linear-gradient(
+      90deg,
+      rgb(13 24 19 / 92%) 0%,
+      rgb(13 24 19 / 85%) 36%,
+      rgb(13 24 19 / 34%) 72%,
+      rgb(13 24 19 / 16%) 100%
+    );
 }
 #setup-form {
   max-width: 420px;
@@ -1390,10 +1403,11 @@ body:not(.session-view) .site-footer {
     margin-bottom: 26px;
   }
   .landing .landscape {
-    position: relative;
-    width: calc(100% - 56px);
-    height: 200px;
-    margin: 0 28px 28px;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
     min-height: 0;
   }
   .landing .landscape img {
@@ -1430,6 +1444,71 @@ body:not(.session-view) .site-footer {
   }
   .landing .intro {
     margin-bottom: 26px;
+  }
+}
+
+/* Scenic arrival tokens are scoped away from the writing canvas. */
+body:not(.session-view) #app {
+  background: #14221b;
+}
+body:not(.session-view) .site-header,
+.landing {
+  --ink: #f7f6f0;
+  --muted: #dedfd7;
+  --sage: #e0e7d6;
+  --sage-light: #33483b;
+  --line: rgb(247 246 240 / 22%);
+  color: var(--ink);
+}
+body:not(.session-view) .site-header .wordmark {
+  font-size: 25px;
+}
+body:not(.session-view) .site-header .text-button {
+  padding: 0 12px;
+  min-height: 44px;
+}
+body:not(.session-view) .site-header .text-button:hover {
+  background: rgb(12 23 17 / 50%);
+}
+.landing .primary {
+  color: #1e2d23;
+  background: #f7f6f0;
+}
+.landing .primary:hover {
+  background: #e0e7d6;
+}
+.landing .settings-fields input,
+.landing .settings-fields select {
+  background: #21352a;
+  color: #f7f6f0;
+  border-color: rgb(247 246 240 / 30%);
+  color-scheme: dark;
+}
+.landing .settings-fields input:focus-visible,
+.landing .settings-fields select:focus-visible {
+  outline-color: #f7f6f0;
+}
+.landing .landscape {
+  background: #14221b;
+}
+.landing .intro {
+  max-width: 30ch;
+}
+@media (max-width: 800px) {
+  .landing .photo-wash {
+    background: linear-gradient(
+      90deg,
+      rgb(13 24 19 / 88%),
+      rgb(13 24 19 / 70%)
+    );
+  }
+  .landing-copy {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  body:not(.session-view) .landing-copy {
+    animation: rise-in 500ms ease both;
   }
 }
 
