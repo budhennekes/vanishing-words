@@ -24,12 +24,20 @@ let lastView = "landing";
 let goalAnnounced = false;
 const APPEARANCE_KEY = "vanishing-words:v2:appearance";
 const TONES = ["paper", "sand", "sage", "mist"];
-let appearance = { tone: "paper", progress: false };
+let appearance = {
+  tone: "paper",
+  progress: false,
+  wordCount: { journal: false, rant: false, words750: true },
+};
 try {
   const saved = JSON.parse(localStorage.getItem(APPEARANCE_KEY));
   if (saved && TONES.includes(saved.tone)) appearance.tone = saved.tone;
   if (typeof saved?.progress === "boolean")
     appearance.progress = saved.progress;
+  for (const mode of Object.keys(appearance.wordCount)) {
+    if (typeof saved?.wordCount?.[mode] === "boolean")
+      appearance.wordCount[mode] = saved.wordCount[mode];
+  }
 } catch {
   /* Invalid/unavailable preferences must not block writing. */
 }
@@ -49,7 +57,7 @@ function applyAppearance(save = false) {
       localStorage.setItem(APPEARANCE_KEY, JSON.stringify(appearance));
     } catch {
       notify(
-        "Page color changed for this visit. This browser could not save the preference.",
+        "Display changed for this visit. This browser could not save the preference.",
       );
     }
   }
@@ -200,7 +208,9 @@ function render() {
   $("suspended").hidden = !suspended;
   const focused = Boolean(state) && !completed && !suspended;
   const goal = state?.mode === "words750";
-  $("goal-progress").hidden = !focused || !goal;
+  const showCount = Boolean(state && appearance.wordCount[state.mode]);
+  $("show-word-count").checked = showCount;
+  $("goal-progress").hidden = !focused || !showCount;
   $("session-clock").hidden = goal;
   document.querySelector(".progress-choice").hidden = goal;
   $("writing-bottom").hidden = !focused || !appearance.progress || goal;
@@ -261,7 +271,9 @@ function render() {
   const words = countWords(text);
   $("word-count").textContent = `${words} ${words === 1 ? "word" : "words"}`;
   const goalText = `${words} / ${WORD_GOAL} words${words >= WORD_GOAL ? " · Goal reached" : ""}`;
-  $("goal-progress").textContent = goalText;
+  $("goal-progress").textContent = goal
+    ? goalText
+    : $("word-count").textContent;
   $("session-word-count").textContent = goal
     ? goalText
     : $("word-count").textContent;
@@ -587,6 +599,12 @@ for (const radio of document.querySelectorAll('[name="paper-tone"]')) {
     applyAppearance(true);
   });
 }
+$("show-word-count").addEventListener("change", () => {
+  if (!state) return;
+  appearance.wordCount[state.mode] = $("show-word-count").checked;
+  applyAppearance(true);
+  render();
+});
 $("show-progress").addEventListener("change", () => {
   appearance.progress = $("show-progress").checked;
   applyAppearance(true);

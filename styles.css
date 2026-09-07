@@ -1684,7 +1684,8 @@ body:not(.session-view) .site-header .text-button:hover {
   outline: 2px solid var(--sage);
   outline-offset: 3px;
 }
-.progress-choice {
+.progress-choice,
+.word-count-choice {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -1692,7 +1693,8 @@ body:not(.session-view) .site-header .text-button:hover {
   font-size: 13px;
   cursor: pointer;
 }
-.progress-choice input {
+.progress-choice input,
+.word-count-choice input {
   accent-color: var(--sage);
   width: 18px;
   height: 18px;

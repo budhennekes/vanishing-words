@@ -19,7 +19,7 @@ Switching modes preserves both settings. In 750 Words, these controls are hidden
 
 ## Focused writing
 
-The writing canvas shows text and one three-dot Session options control. 750 Words adds only a quiet word-goal counter at the bottom; its options omit the timer and pause indicator. Words are whitespace-separated groups, including pasted text. Manual edits update the count, and reaching 750 gives one acknowledgment per session without stealing focus. Open it for time remaining, Finish, word count, Paper/Sand/Sage/Mist backgrounds, or the optional pause indicator (off by default).
+The writing canvas shows text and one three-dot Session options control. A **Show word count** toggle in Session options controls the quiet counter at the bottom. It defaults to off in Journal and Rant, and on in 750 Words. Each mode remembers its own choice in this browser. Hiding the counter does not stop the goal or its milestone acknowledgment; the count remains available inside Session options. 750 Words options omit the timer and pause indicator. Words are whitespace-separated groups, including pasted text. Manual edits update the count, and reaching 750 gives one acknowledgment per session without stealing focus. Open it for time remaining, Finish, word count, Paper/Sand/Sage/Mist backgrounds, or the optional pause indicator (off by default).
 
 - **Esc:** Open/close session options. Closing returns focus to writing.
 - **Cmd/Ctrl+Enter:** Begin from setup.
