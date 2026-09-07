@@ -1257,7 +1257,7 @@ body:not(.session-view) .site-footer {
   max-width: 420px;
 }
 .mode-choices {
-  gap: 30px;
+  gap: clamp(18px, 4vw, 30px);
   width: 100%;
   border-bottom: 1px solid var(--line);
 }
@@ -1510,6 +1510,22 @@ body:not(.session-view) .site-header .text-button:hover {
   body:not(.session-view) .landing-copy {
     animation: rise-in 500ms ease both;
   }
+}
+
+/* A quiet, non-interactive goal cue; outside the typing area. */
+.goal-progress {
+  position: fixed;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 24px;
+  right: 24px;
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--paper);
+  padding: 8px 0;
+  pointer-events: none;
 }
 
 /* Focus canvas: no header, labels, footer, or countdown by default. */

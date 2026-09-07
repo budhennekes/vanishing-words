@@ -1,10 +1,12 @@
 /** Pure session state machine. Every clock value is supplied by the caller. */
 export const MODES = Object.freeze({
   journal: { label: "Journal", grace: 12000 },
+  words750: { label: "750 Words", grace: 45000 },
   content: { label: "Content", grace: 8000 },
   sprint: { label: "Sprint", grace: 4000 },
   rant: { label: "Rant", grace: 45000 },
 });
+export const WORD_GOAL = 750;
 export const FADE_MS = 700;
 export const MAX_SNAPSHOTS = 20;
 export const countWords = (text) => (text.match(/\S+/gu) || []).length;
@@ -47,7 +49,8 @@ export function createSession(
   };
 }
 export function transition(state, event, now) {
-  const due = state.status === "active" && now >= state.deadline;
+  const goal = state.mode === "words750";
+  const due = !goal && state.status === "active" && now >= state.deadline;
   if (state.mode === "rant") {
     if (due || event.type === "finish" || event.type === "leave") {
       return {
@@ -66,7 +69,7 @@ export function transition(state, event, now) {
     if (event.type === "suspend") return state;
   }
   // Completion always wins, including during IME and pending visual dissolution.
-  if (state.status === "active" && now >= state.deadline)
+  if (due)
     return {
       ...state,
       status: "completed",
@@ -83,10 +86,10 @@ export function transition(state, event, now) {
       pending: null,
       composing: false,
       remaining:
-        state.status === "active"
+        state.status === "active" && !goal
           ? Math.max(0, state.deadline - now)
           : state.remaining,
-      reason: "early",
+      reason: goal && countWords(state.text) >= WORD_GOAL ? "goal" : "early",
       updatedAt: now,
     };
   if (event.type === "suspend" && ["active", "ready"].includes(state.status))
@@ -96,7 +99,7 @@ export function transition(state, event, now) {
       pending: null,
       composing: false,
       remaining:
-        state.status === "active"
+        state.status === "active" && !goal
           ? Math.max(0, state.deadline - now)
           : state.duration,
       reason: event.reason || "hidden",
@@ -106,7 +109,7 @@ export function transition(state, event, now) {
     return {
       ...state,
       status: state.startedAt === null ? "ready" : "active",
-      deadline: state.startedAt === null ? null : now + state.remaining,
+      deadline: goal || state.startedAt === null ? null : now + state.remaining,
       lastInputAt: now,
       pending: null,
       reason: null,
@@ -127,11 +130,16 @@ export function transition(state, event, now) {
         pending: null,
         status: start ? "active" : state.status,
         startedAt: start ? now : state.startedAt,
-        deadline: start ? now + state.duration : state.deadline,
+        deadline: goal ? null : start ? now + state.duration : state.deadline,
       };
     }
   }
-  if (event.type === "tick" && state.status === "active" && !state.composing) {
+  if (
+    !goal &&
+    event.type === "tick" &&
+    state.status === "active" &&
+    !state.composing
+  ) {
     if (state.pending && now >= state.pending.at + FADE_MS) {
       let snapshots =
         state.mode === "rant"
@@ -187,7 +195,7 @@ export function restoreSession(raw, now) {
   )
     return null;
   const remaining =
-    raw.status === "active"
+    raw.status === "active" && raw.mode !== "words750"
       ? Math.max(0, Math.min(raw.duration, raw.deadline - raw.updatedAt))
       : Math.max(0, Math.min(raw.duration, raw.remaining));
   if (!Number.isFinite(remaining)) return null;

@@ -4,6 +4,7 @@ import {
   restoreSession,
   MODES,
   countWords,
+  WORD_GOAL,
 } from "./engine.js";
 
 const $ = (id) => document.getElementById(id);
@@ -20,6 +21,7 @@ let lastSaved = "";
 let lastTickAt = now();
 let storageFailed = false;
 let lastView = "landing";
+let goalAnnounced = false;
 const APPEARANCE_KEY = "vanishing-words:v2:appearance";
 const TONES = ["paper", "sand", "sage", "mist"];
 let appearance = { tone: "paper", progress: false };
@@ -159,6 +161,10 @@ function syncEditor(text) {
 }
 function renderClock() {
   if (!state) return;
+  if (state.mode === "words750") {
+    $("idle-status").textContent = "No timer. No disappearing words.";
+    return;
+  }
   const time = now();
   const remaining =
     state.status === "active" ? state.deadline - time : state.remaining;
@@ -193,7 +199,11 @@ function render() {
   $("completion-actions").hidden = !completed;
   $("suspended").hidden = !suspended;
   const focused = Boolean(state) && !completed && !suspended;
-  $("writing-bottom").hidden = !focused || !appearance.progress;
+  const goal = state?.mode === "words750";
+  $("goal-progress").hidden = !focused || !goal;
+  $("session-clock").hidden = goal;
+  document.querySelector(".progress-choice").hidden = goal;
+  $("writing-bottom").hidden = !focused || !appearance.progress || goal;
   $("controls-toggle").hidden = !focused;
   if (!focused) setControls(false);
   document.body.classList.toggle("focus-view", focused);
@@ -220,7 +230,11 @@ function render() {
   $("editor-help").textContent = rant
     ? "Disposable rant. Nothing is saved. Inactivity removes words after your chosen delay. Ending the session or leaving erases everything. Command or Control Shift Enter ends and erases."
     : "The session starts with your first word. Inactivity removes words after your chosen delay. Command or Control Shift Enter finishes and keeps your words.";
+  if (goal)
+    $("editor-help").textContent =
+      "Write toward 750 words. No timer or automatic deletion. Your draft is saved in this browser. You can keep writing past the goal or finish at any time with Command or Control Shift Enter.";
   editor.placeholder = {
+    words750: "Start with whatever is on your mind…",
     journal: "What’s on your mind?",
     content: "What do you want to say?",
     sprint: "Start anywhere…",
@@ -240,13 +254,17 @@ function render() {
   $("completion-title").innerHTML = rant
     ? "Let it <em>go.</em>"
     : "You made <em>space.</em>";
-  $("mode-label").textContent = state.mode === "rant" ? "Rant" : "Journal";
+  $("mode-label").textContent = MODES[state.mode].label;
   editor.readOnly = completed || suspended;
   const text = completed ? displayText() : state.text;
   syncEditor(text);
   const words = countWords(text);
   $("word-count").textContent = `${words} ${words === 1 ? "word" : "words"}`;
-  $("session-word-count").textContent = $("word-count").textContent;
+  const goalText = `${words} / ${WORD_GOAL} words${words >= WORD_GOAL ? " · Goal reached" : ""}`;
+  $("goal-progress").textContent = goalText;
+  $("session-word-count").textContent = goal
+    ? goalText
+    : $("word-count").textContent;
   $("page-label").textContent = completed
     ? "A few words worth keeping."
     : suspended
@@ -260,6 +278,9 @@ function render() {
           ? "The browser took a long breath, so we stopped the clock. Your words are safe. Resume when you’re ready."
           : "You stepped away, so we stopped the clock. Nothing disappears while you’re away.";
   }
+  if (suspended && goal)
+    $("suspend-reason").textContent =
+      "Your page is here, just as you left it. Resume toward 750 words when you’re ready.";
   if (completed) {
     $("completion-eyebrow").textContent =
       state.reason === "timer"
@@ -269,6 +290,18 @@ function render() {
       state.reason === "timer"
         ? "Your time is up. Your words are yours to keep."
         : "You ended the session. Your words are yours to keep.";
+    if (goal) {
+      const reached = words >= WORD_GOAL;
+      $("completion-title").innerHTML = reached
+        ? "You showed <em>up.</em>"
+        : "You made <em>space.</em>";
+      $("completion-eyebrow").textContent = reached
+        ? "750 words. A little room for you."
+        : "A good place to stop.";
+      $("completion-copy").textContent = reached
+        ? "You reached your goal. Your words are yours to keep."
+        : `${words} of ${WORD_GOAL} words. Your page is yours to keep, even when you finish early.`;
+    }
     if (rant) {
       $("completion-eyebrow").textContent = "Out of your head. Off the page.";
       $("completion-copy").textContent =
@@ -311,6 +344,18 @@ function dispatch(event, time = now()) {
   }
   render();
   if (
+    state.mode === "words750" &&
+    !state.composing &&
+    !goalAnnounced &&
+    countWords(state.text) >= WORD_GOAL &&
+    ["input", "compositionEnd"].includes(event.type)
+  ) {
+    goalAnnounced = true;
+    notify(
+      "750 words. You reached your goal. Keep writing, or finish when you’re ready.",
+    );
+  }
+  if (
     before.status !== state.status ||
     before.snapshots !== state.snapshots ||
     event.type === "suspend"
@@ -326,14 +371,23 @@ function setupChanged() {
   $("grace-value").min = unit === "seconds" ? "1" : String(1 / 60);
   $("grace-value").max = unit === "seconds" ? "600" : "10";
   const note = $("grace-note");
-  note.textContent = `Pause for ${value} ${unit} and your last words begin to fade.`;
+  const goal = mode === "words750";
+  $("session-settings").hidden = goal;
+  for (const id of ["custom-minutes", "grace-value", "grace-unit"])
+    $(id).disabled = goal;
+  note.textContent = goal
+    ? "No timer. No disappearing words. Saved in this browser."
+    : `Pause for ${value} ${unit} and your last words begin to fade.`;
   $("settings-summary").textContent =
     `${minutes} min · ${value} ${unit === "seconds" ? "sec" : "min"} pause`;
-  $("mode-description").textContent =
-    mode === "rant" ? "A page to let go." : "A page to keep.";
+  $("mode-description").textContent = goal
+    ? "750 words for yourself. Inspired by The Artist’s Way."
+    : mode === "rant"
+      ? "A page to let go."
+      : "A page to keep.";
   const rant = mode === "rant";
   $("rant-note").hidden = !rant;
-  $("recovery-note").hidden = rant;
+  $("recovery-note").hidden = rant || goal;
   $("begin-button").innerHTML = rant
     ? 'Start rant <span aria-hidden="true">↗</span>'
     : 'Start writing <span aria-hidden="true">↗</span>';
@@ -345,18 +399,22 @@ function begin(event) {
   event?.preventDefault();
   if (state || !$("setup-form").reportValidity()) return;
   const mode = document.querySelector('input[name="mode"]:checked').value;
-  const minutes = Number($("custom-minutes").value);
+  const minutes = mode === "words750" ? 10 : Number($("custom-minutes").value);
   try {
-    const graceMs = Math.round(
-      Number($("grace-value").value) *
-        ($("grace-unit").value === "minutes" ? 60000 : 1000),
-    );
+    const graceMs =
+      mode === "words750"
+        ? MODES.words750.grace
+        : Math.round(
+            Number($("grace-value").value) *
+              ($("grace-unit").value === "minutes" ? 60000 : 1000),
+          );
     state = createSession({ id: makeId(), mode, minutes, graceMs }, now());
   } catch (error) {
     notify(error.message);
     return;
   }
   selectedSnapshot = null;
+  goalAnnounced = false;
   lastSaved = "";
   render();
   flushSave();
@@ -442,6 +500,8 @@ function loadDraft() {
     if (latest) {
       // Fork restored snapshots: even duplicated/new tabs never write to the same session key.
       state = { ...latest.restored, id: makeId() };
+      goalAnnounced =
+        state.mode === "words750" && countWords(state.text) >= WORD_GOAL;
       render();
       notify(
         state.status === "completed"
@@ -537,7 +597,7 @@ for (const eventName of ["copy", "cut"])
     if (state?.mode === "rant") {
       event.preventDefault();
       notify(
-        "Rant is disposable. Choose Journal or Content when you want to keep your words.",
+        "Rant is disposable. Choose Journal or 750 Words when you want to keep your words.",
       );
     }
   });
