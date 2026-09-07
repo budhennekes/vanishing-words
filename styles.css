@@ -17,6 +17,7 @@
   font-display: swap;
 }
 :root {
+  color-scheme: light;
   --paper: #f7f6f0;
   --ink: #30372f;
   --muted: #62675c;
@@ -1528,6 +1529,35 @@ body:not(.session-view) .site-header .text-button:hover {
   pointer-events: none;
 }
 
+/* Theme selection stays inside the existing session menu. */
+.appearance-field {
+  display: block;
+  margin-top: 18px;
+}
+.appearance-field legend {
+  float: none;
+  width: auto;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.appearance-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.appearance-options label > span {
+  width: 100%;
+  height: 44px;
+  padding: 0 8px;
+}
+.appearance-options input:checked + span {
+  background: var(--sage-light);
+  color: var(--ink);
+}
+.appearance-options label:hover > span {
+  background: var(--sage-light);
+}
+
 /* Focus canvas: no header, labels, footer, or countdown by default. */
 :root[data-paper-tone="sand"] {
   --paper: #f1e8da;
@@ -1720,6 +1750,106 @@ body:not(.session-view) .site-header .text-button:hover {
   .focus-view .editor-wrap textarea {
     height: calc(100dvh - var(--page-top) - 28px);
   }
+}
+
+/* Dark palettes: quiet ink, softer surfaces, no inverted photographs. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1b1e1b;
+  --surface: #232823;
+  --ink: #e9ebe3;
+  --muted: #b4bdae;
+  --sage: #b6c9a9;
+  --sage-light: #303a2d;
+  --line: rgb(233 235 227 / 20%);
+  --selection: #40563a;
+}
+:root[data-theme="dark"][data-paper-tone="sand"] {
+  --paper: #24201b;
+  --surface: #2d2821;
+  --ink: #efe7da;
+  --muted: #c5b8a5;
+  --sage: #d1c19e;
+  --sage-light: #3d3428;
+  --selection: #5a4930;
+}
+:root[data-theme="dark"][data-paper-tone="sage"] {
+  --paper: #19221d;
+  --surface: #222d26;
+  --ink: #e4ece2;
+  --muted: #afc1af;
+  --sage: #b2ceb0;
+  --sage-light: #2c3c30;
+  --selection: #3e5943;
+}
+:root[data-theme="dark"][data-paper-tone="mist"] {
+  --paper: #1b2227;
+  --surface: #242e35;
+  --ink: #e5ebee;
+  --muted: #b0c1ca;
+  --sage: #b1ced9;
+  --sage-light: #2e4049;
+  --selection: #3d5462;
+}
+:root[data-theme="dark"] ::selection {
+  color: var(--ink);
+  background: var(--selection);
+}
+:root[data-theme="dark"] .editor-wrap textarea {
+  scrollbar-color: var(--muted) transparent;
+}
+:root[data-theme="dark"] .editor-wrap textarea::placeholder {
+  color: var(--muted);
+}
+:root[data-theme="dark"] .writing-controls,
+:root[data-theme="dark"] dialog {
+  background: var(--surface);
+  box-shadow: none;
+  outline-color: var(--line);
+}
+:root[data-theme="dark"] dialog::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
+:root[data-theme="dark"] :is(.writing, dialog) .primary {
+  background: var(--sage);
+  color: var(--paper);
+}
+:root[data-theme="dark"] :is(.writing, dialog) .primary:hover {
+  background: var(--ink);
+}
+:root[data-theme="dark"] :is(.completion-heading h1, dialog h2) em {
+  color: var(--ink);
+}
+:root[data-theme="dark"] .toast {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+:root[data-theme="dark"] .storage-warning {
+  background: #392d20;
+  color: #f0d4ac;
+}
+:root[data-theme="dark"] .idle-track > div {
+  background: var(--sage);
+}
+:root[data-theme="dark"] .dissolve-word {
+  color: var(--ink);
+}
+:root[data-theme="dark"] .swatch {
+  border-color: rgb(233 235 227 / 35%);
+}
+:root[data-theme="dark"] .tone-paper {
+  background: #1b1e1b;
+}
+:root[data-theme="dark"] .tone-sand {
+  background: #24201b;
+}
+:root[data-theme="dark"] .tone-sage {
+  background: #19221d;
+}
+:root[data-theme="dark"] .tone-mist {
+  background: #1b2227;
 }
 
 @media (prefers-reduced-motion: reduce) {

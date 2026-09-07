@@ -30,6 +30,28 @@
       type="font/ttf"
       crossorigin
     />
+    <script>
+      // Resolve appearance before CSS paints; never read draft contents here.
+      (() => {
+        let saved = null;
+        try {
+          saved = JSON.parse(
+            localStorage.getItem("vanishing-words:v2:appearance"),
+          );
+        } catch {}
+        const mode = ["light", "dark", "system"].includes(saved?.colorMode)
+          ? saved.colorMode
+          : "system";
+        document.documentElement.dataset.theme =
+          mode === "system"
+            ? matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : mode;
+        if (["paper", "sand", "sage", "mist"].includes(saved?.tone))
+          document.documentElement.dataset.paperTone = saved.tone;
+      })();
+    </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -85,6 +107,29 @@
             </button>
           </div>
           <p id="session-word-count" class="session-detail">0 words</p>
+          <fieldset class="appearance-field">
+            <legend>Appearance</legend>
+            <div class="choices appearance-options">
+              <label
+                ><input type="radio" name="color-mode" value="light" /><span
+                  >Light</span
+                ></label
+              >
+              <label
+                ><input type="radio" name="color-mode" value="dark" /><span
+                  >Dark</span
+                ></label
+              >
+              <label
+                ><input
+                  type="radio"
+                  name="color-mode"
+                  value="system"
+                  checked
+                /><span>System</span></label
+              >
+            </div>
+          </fieldset>
           <fieldset class="paper-tones">
             <legend>Page color</legend>
             <div class="tone-options">

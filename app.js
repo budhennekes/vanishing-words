@@ -24,14 +24,19 @@ let lastView = "landing";
 let goalAnnounced = false;
 const APPEARANCE_KEY = "vanishing-words:v2:appearance";
 const TONES = ["paper", "sand", "sage", "mist"];
+const COLOR_MODES = ["light", "dark", "system"];
+const systemColorScheme = matchMedia("(prefers-color-scheme: dark)");
 let appearance = {
   tone: "paper",
+  colorMode: "system",
   progress: false,
   wordCount: { journal: false, rant: false, words750: true },
 };
 try {
   const saved = JSON.parse(localStorage.getItem(APPEARANCE_KEY));
   if (saved && TONES.includes(saved.tone)) appearance.tone = saved.tone;
+  if (COLOR_MODES.includes(saved?.colorMode))
+    appearance.colorMode = saved.colorMode;
   if (typeof saved?.progress === "boolean")
     appearance.progress = saved.progress;
   for (const mode of Object.keys(appearance.wordCount)) {
@@ -42,6 +47,15 @@ try {
   /* Invalid/unavailable preferences must not block writing. */
 }
 function applyAppearance(save = false) {
+  document.documentElement.dataset.theme =
+    appearance.colorMode === "system"
+      ? systemColorScheme.matches
+        ? "dark"
+        : "light"
+      : appearance.colorMode;
+  document.querySelector(
+    `[name="color-mode"][value="${appearance.colorMode}"]`,
+  ).checked = true;
   document.documentElement.dataset.paperTone = appearance.tone;
   document.querySelector(
     `[name="paper-tone"][value="${appearance.tone}"]`,
@@ -595,6 +609,15 @@ document.addEventListener("keydown", (event) => {
   event.preventDefault();
   setControls($("writing-controls").hidden, true);
 });
+systemColorScheme.addEventListener("change", () => {
+  if (appearance.colorMode === "system") applyAppearance();
+});
+for (const radio of document.querySelectorAll('[name="color-mode"]')) {
+  radio.addEventListener("change", () => {
+    appearance.colorMode = radio.value;
+    applyAppearance(true);
+  });
+}
 for (const radio of document.querySelectorAll('[name="paper-tone"]')) {
   radio.addEventListener("change", () => {
     appearance.tone = radio.value;

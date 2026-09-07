@@ -27,6 +27,12 @@ The writing canvas shows text and one three-dot Session options control. A **Sho
 
 The native textarea preserves selection, paste, cursor movement, and IME composition. Reduced-motion preferences are respected. Opening session options does not pause either clock.
 
+## Appearance
+
+Open the three-dot Session options menu and choose **Light**, **Dark**, or **System**. System is the default and follows live operating-system theme changes. An explicit Light or Dark choice overrides the system. The browser remembers this preference separately from writing, along with your selected Paper, Sand, Sage, or Mist tone. Each tone has a matching dark palette.
+
+The writing surface, menus, completion view, dialogs, recovery fields, selections, caret, and status messages follow the theme. The scenic arrival photograph remains the same. Appearance is applied before the stylesheet paints, then kept in sync while the app runs. If preference saving fails, the choice still applies for this visit and a message explains the limitation. Appearance changes do not change timers, word goals, or saved text.
+
 ## Privacy and recovery
 
 The app does not transmit your writing. We do not receive or store copies of it. The recovery link explains local storage before writing; the recovery picker repeats this boundary. If browser data is removed, we cannot restore it for you. Journal and 750 Words drafts, plus Journal’s exact, bounded recovery snapshots, live in this browser’s localStorage. This is not encryption or a backup service. Export important writing. Clearing browser data can remove drafts. Localhost and the hosted app have separate storage; drafts do not sync between them.
