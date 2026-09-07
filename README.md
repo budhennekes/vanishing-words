@@ -29,7 +29,7 @@ The native textarea preserves selection, paste, cursor movement, and IME composi
 
 ## Privacy and recovery
 
-The app does not transmit your writing. Journal and 750 Words drafts, plus Journal’s exact, bounded recovery snapshots, live in this browser’s localStorage. This is not encryption or a backup service. Export important writing. Clearing browser data can remove drafts. Localhost and the hosted app have separate storage; drafts do not sync between them.
+The app does not transmit your writing. We do not receive or store copies of it. The recovery link explains local storage before writing; the recovery picker repeats this boundary. If browser data is removed, we cannot restore it for you. Journal and 750 Words drafts, plus Journal’s exact, bounded recovery snapshots, live in this browser’s localStorage. This is not encryption or a backup service. Export important writing. Clearing browser data can remove drafts. Localhost and the hosted app have separate storage; drafts do not sync between them.
 
 Journal stops safely when you switch tabs. Reloaded drafts require explicit resume. Restored tabs use separate session IDs so they do not overwrite each other’s drafts. Older Content/Sprint drafts remain readable for compatibility; these modes are no longer offered.
 

@@ -102,7 +102,9 @@ function flushSave() {
     if (storageFailed) {
       storageFailed = false;
       $("storage-warning").hidden = true;
-      notify("Saving is working again. Your draft is on this device.");
+      notify(
+        "Saving is working again. Your draft is saved only in this browser.",
+      );
     }
     return true;
   } catch {
@@ -230,7 +232,7 @@ function render() {
   const rant = state.mode === "rant";
   $("privacy-label").textContent = rant
     ? "Not saved. Erased when this session ends."
-    : "Saved on this device.";
+    : "Saved only in this browser.";
   $("finish-button").innerHTML = rant
     ? 'End & erase <span aria-hidden="true">↗</span>'
     : 'Finish <span aria-hidden="true">↗</span>';
@@ -285,7 +287,7 @@ function render() {
   if (suspended) {
     $("suspend-reason").textContent =
       state.reason === "restored"
-        ? "We found your last page on this device. The clock is stopped and your words are safe. Resume when you’re ready."
+        ? "Your browser restored your last page. Nothing was retrieved from a server. The clock is stopped. Resume when you’re ready."
         : state.reason === "interrupted"
           ? "The browser took a long breath, so we stopped the clock. Your words are safe. Resume when you’re ready."
           : "You stepped away, so we stopped the clock. Nothing disappears while you’re away.";
@@ -328,7 +330,7 @@ function render() {
     $("current-button").hidden = rant || selectedSnapshot === null;
     $("recovery-button").disabled = state.snapshots.length === 0;
     $("recovery-button").title = state.snapshots.length
-      ? "View exact snapshots saved before automatic deletion"
+      ? "View exact copies stored in this browser before automatic deletion"
       : "No words vanished, so no recovery snapshots were needed";
     for (const id of ["copy-button", "txt-button", "md-button"])
       $(id).disabled = text.length === 0;
@@ -405,7 +407,7 @@ function setupChanged() {
     : 'Start writing <span aria-hidden="true">↗</span>';
   $("privacy-label").textContent = rant
     ? "Rant is never saved."
-    : "Saved on this device.";
+    : "Saved only in this browser.";
 }
 function begin(event) {
   event?.preventDefault();
@@ -556,7 +558,7 @@ $("about-button").addEventListener("click", () =>
   $("about-dialog").showModal(),
 );
 $("recovery-info").addEventListener("click", () =>
-  $("about-dialog").showModal(),
+  $("local-recovery-dialog").showModal(),
 );
 for (const button of document.querySelectorAll("[data-close]"))
   button.addEventListener("click", () => button.closest("dialog").close());

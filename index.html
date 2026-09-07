@@ -227,7 +227,7 @@
               </div>
               <p class="recovery-note" id="recovery-note">
                 <button type="button" class="inline-link" id="recovery-info">
-                  How recovery works
+                  Recovery stays in this browser
                 </button>
               </p>
             </form>
@@ -343,7 +343,7 @@
         <p>Less editing. More discovering.</p>
         <p>
           <span class="privacy-dot" aria-hidden="true"></span>Just you & the
-          page. <span id="privacy-label">Saved on this device.</span>
+          page. <span id="privacy-label">Saved only in this browser.</span>
         </p>
       </footer>
     </div>
@@ -393,17 +393,25 @@
         you switch tabs. This is not secure erasure or protection against
         screenshots or browser/OS memory.
       </p>
-      <h3>A way back in Journal.</h3>
+      <h3>Your browser. Not our servers.</h3>
+      <p>
+        Your writing is not sent to us. We do not receive or store a copy.
+        Journal and 750 Words save drafts only in this browser, with no account
+        or cloud sync. Rant saves nothing.
+      </p>
+      <h3>A local way back in Journal.</h3>
       <p>
         Recovery keeps exact snapshots from before automatic deletions—not a
-        stitched-together transcript. We keep the original before the first
-        deletion, plus up to 19 recent snapshots. Your manual edits and removed
-        history aren’t reconstructed.
+        stitched-together transcript. Your browser keeps the original before the
+        first deletion, plus up to 19 recent snapshots. Your manual edits and
+        removed history aren’t reconstructed.
       </p>
       <p>
         In Journal, switching tabs safely stops the clock until you resume.
-        Reloaded drafts also wait for you. Everything stays in this browser’s
-        local storage; nothing is sent to a server. Export important writing.
+        Reloaded drafts also wait for you. Clearing browser data can remove your
+        drafts and recovery copies. They do not sync to another browser or
+        device, and we cannot restore them for you. Download writing you want to
+        keep. This app does not encrypt local storage.
       </p>
       <p class="dialog-shortcuts">
         <kbd>⌘ / Ctrl Enter</kbd> Begin<br /><kbd>⌘ / Ctrl ⇧ Enter</kbd> Finish
@@ -413,9 +421,38 @@
         Make a little space <span aria-hidden="true">↗</span>
       </button>
     </dialog>
+    <dialog id="local-recovery-dialog" aria-labelledby="local-recovery-title">
+      <div class="dialog-top">
+        <p class="eyebrow">Recovery, without the cloud.</p>
+        <button
+          type="button"
+          class="text-button"
+          data-close
+          aria-label="Close local recovery explanation"
+        >
+          Close ×
+        </button>
+      </div>
+      <h2 id="local-recovery-title">Only in <em>this browser.</em></h2>
+      <p>Your writing is not sent to us. We do not receive or store a copy.</p>
+      <p>
+        Journal saves drafts and recovery copies in this browser. 750 Words
+        saves your draft here too. No account. No cloud sync. Rant saves
+        nothing.
+      </p>
+      <p>
+        Clearing browser data can remove these copies. They are not available on
+        another browser or device, and we cannot restore them for you. Download
+        writing you want to keep.
+      </p>
+      <p class="archive-note">
+        Recovery saves exact versions before automatic deletion, not every edit.
+        This app does not encrypt local storage.
+      </p>
+    </dialog>
     <dialog id="recovery-dialog" aria-labelledby="recovery-title">
       <div class="dialog-top">
-        <p class="eyebrow">A way back.</p>
+        <p class="eyebrow">Local recovery.</p>
         <button
           type="button"
           class="text-button"
@@ -426,6 +463,11 @@
         </button>
       </div>
       <h2 id="recovery-title">Not quite <em>gone.</em></h2>
+      <p>
+        Stored only in this browser. Not sent to us. Clearing browser data can
+        remove these copies; we cannot restore them for you. Download anything
+        you want to keep.
+      </p>
       <p>
         Exact versions from before automatic deletion. Choosing one changes your
         preview and export—not your current text. No versions are stitched
