@@ -1852,6 +1852,62 @@ body:not(.session-view) .site-header .text-button:hover {
   background: #1b2227;
 }
 
+/* One scenic completion frame; plain paper only while writing or editing. */
+.note-surface {
+  display: contents;
+}
+body.completed #app {
+  background: #14221b;
+  max-width: none;
+}
+body.completed #app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(9 24 17 / 78%), rgb(9 24 17 / 48%)),
+    url("assets/landscape.jpg") center / cover;
+}
+body.completed .site-header,
+body.completed .site-footer,
+body.completed .completion-heading {
+  --ink: #f7f6f0;
+  --muted: #dedfd7;
+  --sage: #e0e7d6;
+  color: var(--ink);
+}
+body.completed .completion-heading h1 em {
+  color: #e0e7d6;
+}
+body.completed .note-surface {
+  display: block;
+  background: var(--paper);
+  color: var(--ink);
+  padding: clamp(20px, 3vw, 36px);
+  border-radius: 8px;
+  box-shadow: 0 16px 50px rgb(0 0 0 / 12%);
+}
+body.completed .writing {
+  margin-bottom: 24px;
+}
+body.completed .completion-heading {
+  padding-bottom: 28px;
+}
+body.completed .completion-actions {
+  padding-bottom: 0;
+}
+body.completed .site-footer {
+  gap: 16px;
+}
+@media (min-width: 801px) {
+  body.completed #app::before {
+    background-image:
+      linear-gradient(90deg, rgb(9 24 17 / 78%), rgb(9 24 17 / 48%)),
+      url("assets/landscape-hd.jpg");
+  }
+}
 /* Fullscreen expands the actual document, while preserving readable line length. */
 :root:fullscreen {
   background: var(--paper);

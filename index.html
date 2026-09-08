@@ -52,7 +52,7 @@
           document.documentElement.dataset.paperTone = saved.tone;
       })();
     </script>
-    <link rel="stylesheet" href="styles.css?v=fullscreen-1" />
+    <link rel="stylesheet" href="styles.css?v=completion-1" />
   </head>
   <body>
     <div id="app">
@@ -375,74 +375,76 @@
               </button>
             </div>
           </div>
-          <div class="page-label">
-            <span id="page-label">Follow the thought.</span
-            ><span class="count" id="word-count">0 words</span>
-          </div>
-          <div class="editor-wrap" id="editor-wrap">
-            <label class="sr-only" for="editor">Your writing</label>
-            <textarea
-              id="editor"
-              name="writing"
-              placeholder="Start anywhere…"
-              spellcheck="true"
-              autocomplete="off"
-              aria-describedby="editor-help"
-            ></textarea>
-            <div
-              class="dissolve-mirror"
-              id="dissolve-mirror"
-              aria-hidden="true"
-            ></div>
-          </div>
-          <p class="sr-only" id="editor-help">
-            Write normally. The timer begins with your first word. Inactivity
-            deletes the last word after your chosen pause. Command or Control
-            Shift Enter finishes the session: Journal keeps your words; Rant
-            erases them.
-          </p>
-          <p id="goal-progress" class="goal-progress" hidden aria-live="off">
-            0 / 750 words
-          </p>
-          <div class="writing-bottom" id="writing-bottom">
-            <div class="idle-track" aria-hidden="true">
-              <div id="idle-fill"></div>
+          <div class="note-surface">
+            <div class="page-label">
+              <span id="page-label">Follow the thought.</span
+              ><span class="count" id="word-count">0 words</span>
             </div>
-          </div>
-          <div class="completion-actions" id="completion-actions" hidden>
-            <div class="export-source">
-              <p id="export-source">Current text</p>
-              <button type="button" class="text-button" id="recovery-button">
-                Recovery <span aria-hidden="true">↗</span></button
-              ><button
-                type="button"
-                class="inline-link"
-                id="current-button"
-                hidden
-              >
-                Back to current text
-              </button>
+            <div class="editor-wrap" id="editor-wrap">
+              <label class="sr-only" for="editor">Your writing</label>
+              <textarea
+                id="editor"
+                name="writing"
+                placeholder="Start anywhere…"
+                spellcheck="true"
+                autocomplete="off"
+                aria-describedby="editor-help"
+              ></textarea>
+              <div
+                class="dissolve-mirror"
+                id="dissolve-mirror"
+                aria-hidden="true"
+              ></div>
             </div>
-            <div class="export-buttons">
-              <button type="button" class="text-button" id="edit-note-button">
-                Edit note
-              </button>
-              <button
-                type="button"
-                class="text-button"
-                id="completed-notes-button"
-              >
-                Notes
-              </button>
-              <button type="button" class="text-button" id="copy-button">
-                Copy text</button
-              ><button type="button" class="text-button" id="txt-button">
-                Download .txt</button
-              ><button type="button" class="text-button" id="md-button">
-                Download .md</button
-              ><button type="button" class="primary" id="new-button">
-                New note <span aria-hidden="true">↗</span>
-              </button>
+            <p class="sr-only" id="editor-help">
+              Write normally. The timer begins with your first word. Inactivity
+              deletes the last word after your chosen pause. Command or Control
+              Shift Enter finishes the session: Journal keeps your words; Rant
+              erases them.
+            </p>
+            <p id="goal-progress" class="goal-progress" hidden aria-live="off">
+              0 / 750 words
+            </p>
+            <div class="writing-bottom" id="writing-bottom">
+              <div class="idle-track" aria-hidden="true">
+                <div id="idle-fill"></div>
+              </div>
+            </div>
+            <div class="completion-actions" id="completion-actions" hidden>
+              <div class="export-source">
+                <p id="export-source">Current text</p>
+                <button type="button" class="text-button" id="recovery-button">
+                  Recovery <span aria-hidden="true">↗</span></button
+                ><button
+                  type="button"
+                  class="inline-link"
+                  id="current-button"
+                  hidden
+                >
+                  Back to current text
+                </button>
+              </div>
+              <div class="export-buttons">
+                <button type="button" class="text-button" id="edit-note-button">
+                  Edit note
+                </button>
+                <button
+                  type="button"
+                  class="text-button"
+                  id="completed-notes-button"
+                >
+                  Notes
+                </button>
+                <button type="button" class="text-button" id="copy-button">
+                  Copy text</button
+                ><button type="button" class="text-button" id="txt-button">
+                  Download .txt</button
+                ><button type="button" class="text-button" id="md-button">
+                  Download .md</button
+                ><button type="button" class="primary" id="new-button">
+                  New note <span aria-hidden="true">↗</span>
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -637,6 +639,6 @@
         any writing anywhere.
       </p></noscript
     >
-    <script type="module" src="app.js?v=fullscreen-1"></script>
+    <script type="module" src="app.js?v=completion-1"></script>
   </body>
 </html>

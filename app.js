@@ -5,7 +5,7 @@ import {
   MODES,
   countWords,
   WORD_GOAL,
-} from "./engine.js?v=fullscreen-1";
+} from "./engine.js?v=completion-1";
 
 const $ = (id) => document.getElementById(id);
 const editor = $("editor");
