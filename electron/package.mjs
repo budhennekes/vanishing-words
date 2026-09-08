@@ -27,9 +27,9 @@ await fs.copyFile(
 await fs.writeFile(
   path.join(stage, "package.json"),
   JSON.stringify({
-    name: "room-to-write",
-    productName: "Room to Write",
-    version: "0.2.0",
+    name: "let-it-out",
+    productName: "Let It Out",
+    version: "0.2.1",
     main: "electron/main.cjs",
   }),
 );
@@ -42,7 +42,7 @@ const out = path.join(
 const paths = await packager({
   dir: stage,
   out,
-  name: "Room to Write",
+  name: "Let It Out",
   platform: "darwin",
   arch: process.arch,
   electronVersion: "44.2.0",

@@ -5,7 +5,7 @@ import {
   MODES,
   countWords,
   WORD_GOAL,
-} from "./engine.js?v=release-2";
+} from "./engine.js?v=let-it-out-1";
 
 const $ = (id) => document.getElementById(id);
 const editor = $("editor");
@@ -697,7 +697,7 @@ function download(extension) {
       : selectedSnapshot === 0
         ? "original"
         : "recovery";
-  a.download = `room-to-write-${source}-${new Date().toISOString().slice(0, 10)}.${extension}`;
+  a.download = `let-it-out-${source}-${new Date().toISOString().slice(0, 10)}.${extension}`;
   document.body.append(a);
   a.click();
   a.remove();

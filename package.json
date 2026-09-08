@@ -1,7 +1,7 @@
 {
-  "name": "room-to-write",
-  "productName": "Room to Write",
-  "version": "0.2.0",
+  "name": "let-it-out",
+  "productName": "Let It Out",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",

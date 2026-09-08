@@ -10,7 +10,9 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { pathToFileURL } = require("node:url");
 const { createHash } = require("node:crypto");
-app.setName("Room to Write");
+app.setName("Let It Out");
+// Keep the established data directory and rtwrite origin across the display-name change.
+app.setPath("userData", path.join(app.getPath("appData"), "Room to Write"));
 if (process.env.RTW_QA_PROFILE)
   app.setPath("userData", path.resolve(process.env.RTW_QA_PROFILE));
 protocol.registerSchemesAsPrivileged([
@@ -36,7 +38,7 @@ function createWindow() {
     height: 900,
     minWidth: 390,
     minHeight: 550,
-    title: "Room to Write",
+    title: "Let It Out",
     backgroundColor: "#14221b",
     show: false,
     webPreferences: {
@@ -100,7 +102,7 @@ else {
     Menu.setApplicationMenu(
       Menu.buildFromTemplate([
         {
-          label: "Room to Write",
+          label: "Let It Out",
           submenu: [
             { role: "about" },
             { type: "separator" },

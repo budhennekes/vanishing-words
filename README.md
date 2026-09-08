@@ -1,10 +1,10 @@
-# Room to Write
+# Let It Out
 
 A quiet writing app. Let a thought out before you edit it away.
 
 ## Try it
 
-[Open Room to Write](https://budhennekes.github.io/vanishing-words/)
+[Open Let It Out](https://budhennekes.github.io/vanishing-words/)
 
 - **Journal:** Keep your writing. Recovery snapshots are available after automatic deletions.
 - **Rant:** Write without keeping a record. Nothing is saved. Remaining text is erased when the session ends, you finish, or you leave.
@@ -35,7 +35,7 @@ The Mac app bundles its fonts and photographs and works without the hosted websi
 
 Notes stay in the app’s local Chromium storage under its macOS application-support directory. They persist across quits, but are not encrypted files or an automatic backup. Export important writing. Web and Mac notes are separate and do not sync. Removing app data can remove notes. Rant never saves a record.
 
-This is a local test build, not a signed/notarized customer release. The repository URL and legacy storage keys remain unchanged to preserve existing web drafts. The product’s displayed name is Room to Write; commercial name clearance is still pending.
+This is a local test build, not a signed/notarized customer release. The repository URL and legacy storage keys remain unchanged to preserve existing web drafts. The product’s displayed name is Let It Out; commercial name clearance is still pending. The Mac app retains its original Room to Write data directory, bundle ID, and rtwrite origin so the name change does not create an empty library.
 
 ## Visible navigation and release
 
