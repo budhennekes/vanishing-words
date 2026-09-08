@@ -5,7 +5,7 @@ import {
   MODES,
   countWords,
   WORD_GOAL,
-} from "./engine.js?v=notes-1";
+} from "./engine.js?v=fullscreen-1";
 
 const $ = (id) => document.getElementById(id);
 const editor = $("editor");
@@ -131,6 +131,47 @@ function setControls(open, returnToEditor = false) {
   else if (returnToEditor && allowed) editor.focus({ preventScroll: true });
 }
 
+function fullscreenElement() {
+  return document.fullscreenElement || document.webkitFullscreenElement;
+}
+function syncFullscreen() {
+  const active = Boolean(fullscreenElement());
+  $("fullscreen-button").textContent = active
+    ? "Exit fullscreen"
+    : "Enter fullscreen";
+  $("fullscreen-button").setAttribute("aria-pressed", String(active));
+  $("menu-keyboard-help").textContent = active
+    ? "Esc exits fullscreen."
+    : "Esc to return to your words.";
+  setControls(false);
+  if (state && ["ready", "active"].includes(state.status))
+    editor.focus({ preventScroll: true });
+}
+$("fullscreen-button").addEventListener("click", async () => {
+  try {
+    if (fullscreenElement()) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      await exit.call(document);
+    } else {
+      const root = document.documentElement;
+      const enter = root.requestFullscreen || root.webkitRequestFullscreen;
+      if (!enter) {
+        notify(
+          "This browser does not support page fullscreen. Try a supported desktop browser. Your writing stays on this page.",
+        );
+        return;
+      }
+      // Call directly from this click: browsers require a user gesture.
+      await enter.call(root, { navigationUI: "hide" });
+    }
+  } catch {
+    notify(
+      "Fullscreen was blocked by this browser. Open the app in its own browser tab and try again. Your writing is unchanged.",
+    );
+  }
+});
+document.addEventListener("fullscreenchange", syncFullscreen);
+document.addEventListener("webkitfullscreenchange", syncFullscreen);
 function notify(message) {
   clearTimeout(toastTimer);
   $("toast").textContent = message;
@@ -694,6 +735,7 @@ document.addEventListener("pointerdown", (event) => {
 document.addEventListener("keydown", (event) => {
   if (
     event.key !== "Escape" ||
+    fullscreenElement() ||
     event.isComposing ||
     document.querySelector("dialog[open]") ||
     !state ||

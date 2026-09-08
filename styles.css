@@ -1852,6 +1852,19 @@ body:not(.session-view) .site-header .text-button:hover {
   background: #1b2227;
 }
 
+/* Fullscreen expands the actual document, while preserving readable line length. */
+:root:fullscreen {
+  background: var(--paper);
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+:root:-webkit-full-screen {
+  background: var(--paper);
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
 /* Quiet navigation lives in the existing menu, not over the page. */
 .note-navigation,
 .new-note-controls {

@@ -29,11 +29,17 @@ The native textarea preserves selection, paste, cursor movement, and IME composi
 
 ## Notes and navigation
 
-Open **Notes** in Session options or from a finished or paused page. Notes use the first line as their title. **New note** saves the current page and opens a blank one in the current mode without visiting setup. The menu also lets you choose another mode for the new page. **Session settings** explicitly returns to setup.
+Open **Notes** in Session options or from a finished or paused page. Notes use the first line as their title. **New note** saves the current page and opens a blank one in the current mode without visiting setup. The menu also lets you choose another mode for the new page. **Back to start screen** explicitly returns to setup.
 
 Opening Notes pauses retained sessions. Selecting a page resumes its saved remaining time; completed pages open for reading. **Edit note** lets you revise a completed page without restarting its timer or deletion. Failed saves block navigation away from the current draft. Leaving a nonempty Rant for another note asks before erasing it. Rant never appears in Notes.
 
 750 Words has an **Erase after a pause** toggle in Session options. Turning it off cancels pending deletion. When enabled, words disappear after the configured delay, but exact pre-deletion snapshots remain recoverable. This is a writing aid, not disposable Rant behavior.
+
+## Fullscreen
+
+Choose **Enter fullscreen** in the three-dot menu to use the browser’s actual Fullscreen API. The same control becomes **Exit fullscreen**. Browser Escape exits fullscreen without toggling the app menu. The full document expands, so Notes and recovery dialogs remain available. Text keeps a readable line length. Fullscreen stays active when starting another note; it is not forced on reload.
+
+Fullscreen requires a click and browser support. Unsupported browsers show an explanation rather than pretending an enlarged page is fullscreen. iPhone support varies; a Home Screen standalone view is an alternative, not the Fullscreen API.
 
 ## Appearance
 

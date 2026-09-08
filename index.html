@@ -52,7 +52,7 @@
           document.documentElement.dataset.paperTone = saved.tone;
       })();
     </script>
-    <link rel="stylesheet" href="styles.css?v=notes-1" />
+    <link rel="stylesheet" href="styles.css?v=fullscreen-1" />
   </head>
   <body>
     <div id="app">
@@ -107,11 +107,16 @@
             </button>
           </div>
           <div class="note-navigation">
+            <button
+              type="button"
+              class="text-button"
+              id="fullscreen-button"
+              aria-pressed="false"
+            >
+              Enter fullscreen
+            </button>
             <button type="button" class="text-button" id="notes-button">
               Notes
-            </button>
-            <button type="button" class="text-button" id="home-button">
-              Session settings
             </button>
           </div>
           <div class="new-note-controls">
@@ -201,7 +206,12 @@
           <p id="idle-status" class="session-detail">
             The clock begins with your first word.
           </p>
-          <p class="session-detail">Esc to return to your words.</p>
+          <button type="button" class="text-button" id="home-button">
+            Back to start screen
+          </button>
+          <p class="session-detail" id="menu-keyboard-help">
+            Esc to return to your words.
+          </p>
         </section>
 
         <section class="landing" id="landing" aria-labelledby="hero-title">
@@ -316,6 +326,8 @@
           <figure class="landscape">
             <img
               src="assets/landscape.jpg"
+              srcset="assets/landscape.jpg 1400w, assets/landscape-hd.jpg 3200w"
+              sizes="100vw"
               alt="Sunlight finding its way through a quiet, misty forest."
               width="1000"
               height="1400"
@@ -625,6 +637,6 @@
         any writing anywhere.
       </p></noscript
     >
-    <script type="module" src="app.js?v=notes-1"></script>
+    <script type="module" src="app.js?v=fullscreen-1"></script>
   </body>
 </html>
