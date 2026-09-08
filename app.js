@@ -278,8 +278,8 @@ function render() {
   ])
     $(id).hidden = rant;
   $("completion-title").innerHTML = rant
-    ? "Let it <em>go.</em>"
-    : "You made <em>space.</em>";
+    ? "Rant <em>erased.</em>"
+    : "Session <em>finished.</em>";
   $("mode-label").textContent = MODES[state.mode].label;
   editor.readOnly = completed || suspended;
   const text = completed ? displayText() : state.text;
@@ -303,17 +303,17 @@ function render() {
       state.reason === "restored"
         ? "Your browser restored your last page. Nothing was retrieved from a server. The clock is stopped. Resume when you’re ready."
         : state.reason === "interrupted"
-          ? "The browser took a long breath, so we stopped the clock. Your words are safe. Resume when you’re ready."
-          : "You stepped away, so we stopped the clock. Nothing disappears while you’re away.";
+          ? "The browser interrupted the session. The timer and automatic deletion are paused. Resume to continue writing."
+          : "The timer and automatic deletion are paused while you’re away. Resume to continue writing.";
   }
   if (suspended && goal)
     $("suspend-reason").textContent =
-      "Your page is here, just as you left it. Resume toward 750 words when you’re ready.";
+      "Your draft is here. Resume writing toward 750 words, or finish and keep what you have.";
   if (completed) {
     $("completion-eyebrow").textContent =
       state.reason === "timer"
-        ? "A little time, well spent."
-        : "A good place to stop.";
+        ? "Writing complete."
+        : "Session finished.";
     $("completion-copy").textContent =
       state.reason === "timer"
         ? "Your time is up. Your words are yours to keep."
@@ -321,11 +321,11 @@ function render() {
     if (goal) {
       const reached = words >= WORD_GOAL;
       $("completion-title").innerHTML = reached
-        ? "You showed <em>up.</em>"
-        : "You made <em>space.</em>";
+        ? "750 words. <em>Done.</em>"
+        : "Session <em>finished.</em>";
       $("completion-eyebrow").textContent = reached
-        ? "750 words. A little room for you."
-        : "A good place to stop.";
+        ? "Word goal reached."
+        : "Session finished.";
       $("completion-copy").textContent = reached
         ? "You reached your goal. Your words are yours to keep."
         : `${words} of ${WORD_GOAL} words. Your page is yours to keep, even when you finish early.`;
@@ -411,8 +411,8 @@ function setupChanged() {
   $("mode-description").textContent = goal
     ? "750 words for yourself. Inspired by The Artist’s Way."
     : mode === "rant"
-      ? "A page to let go."
-      : "A page to keep.";
+      ? "Write it out. Leave no saved copy."
+      : "Write it out. Keep your page.";
   const rant = mode === "rant";
   $("rant-note").hidden = !rant;
   $("recovery-note").hidden = rant || goal;
