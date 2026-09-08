@@ -1852,6 +1852,82 @@ body:not(.session-view) .site-header .text-button:hover {
   background: #1b2227;
 }
 
+/* Quiet navigation lives in the existing menu, not over the page. */
+.note-navigation,
+.new-note-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.new-note-controls {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.new-note-controls select {
+  min-height: 44px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px;
+}
+#goal-erase-choice,
+.goal-erase-setup {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.goal-erase-setup {
+  margin: 10px 0;
+}
+.saved-notes-link {
+  margin-top: 12px;
+  color: inherit;
+  min-height: 44px;
+}
+.notes-list {
+  display: grid;
+  max-height: 48vh;
+  overflow: auto;
+  margin-top: 24px;
+}
+.saved-note {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  padding: 18px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+.saved-note strong {
+  font: inherit;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.saved-note span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.saved-note:hover {
+  background: var(--sage-light);
+}
+.saved-note:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: -2px;
+}
+#notes-dialog {
+  width: min(580px, calc(100vw - 32px));
+}
+#notes-dialog .dialog-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

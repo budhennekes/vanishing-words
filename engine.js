@@ -11,7 +11,7 @@ export const FADE_MS = 700;
 export const MAX_SNAPSHOTS = 20;
 export const countWords = (text) => (text.match(/\S+/gu) || []).length;
 export function createSession(
-  { id, mode = "journal", minutes = 10, graceMs },
+  { id, mode = "journal", minutes = 10, graceMs, eraseOnPause = false },
   now,
 ) {
   const grace = graceMs === undefined ? MODES[mode]?.grace : graceMs;
@@ -32,6 +32,7 @@ export function createSession(
     id,
     mode,
     grace,
+    eraseOnPause: mode === "words750" && eraseOnPause === true,
     duration: minutes * 60000,
     createdAt: now,
     updatedAt: now,
@@ -49,7 +50,22 @@ export function createSession(
   };
 }
 export function transition(state, event, now) {
-  const goal = state.mode === "words750";
+  const goal = state.mode === "words750" || state.editing === true;
+  if (
+    event.type === "edit" &&
+    state.status === "completed" &&
+    state.mode !== "rant"
+  )
+    return {
+      ...state,
+      editing: true,
+      status: "active",
+      deadline: null,
+      pending: null,
+      composing: false,
+      reason: null,
+      updatedAt: now,
+    };
   const due = !goal && state.status === "active" && now >= state.deadline;
   if (state.mode === "rant") {
     if (due || event.type === "finish" || event.type === "leave") {
@@ -89,7 +105,10 @@ export function transition(state, event, now) {
         state.status === "active" && !goal
           ? Math.max(0, state.deadline - now)
           : state.remaining,
-      reason: goal && countWords(state.text) >= WORD_GOAL ? "goal" : "early",
+      reason:
+        state.mode === "words750" && countWords(state.text) >= WORD_GOAL
+          ? "goal"
+          : "early",
       updatedAt: now,
     };
   if (event.type === "suspend" && ["active", "ready"].includes(state.status))
@@ -135,7 +154,8 @@ export function transition(state, event, now) {
     }
   }
   if (
-    !goal &&
+    (!goal ||
+      (state.mode === "words750" && state.eraseOnPause && !state.editing)) &&
     event.type === "tick" &&
     state.status === "active" &&
     !state.composing
@@ -195,7 +215,7 @@ export function restoreSession(raw, now) {
   )
     return null;
   const remaining =
-    raw.status === "active" && raw.mode !== "words750"
+    raw.status === "active" && raw.mode !== "words750" && !raw.editing
       ? Math.max(0, Math.min(raw.duration, raw.deadline - raw.updatedAt))
       : Math.max(0, Math.min(raw.duration, raw.remaining));
   if (!Number.isFinite(remaining)) return null;

@@ -52,7 +52,7 @@
           document.documentElement.dataset.paperTone = saved.tone;
       })();
     </script>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=notes-1" />
   </head>
   <body>
     <div id="app">
@@ -106,6 +106,30 @@
               Finish <span aria-hidden="true">↗</span>
             </button>
           </div>
+          <div class="note-navigation">
+            <button type="button" class="text-button" id="notes-button">
+              Notes
+            </button>
+            <button type="button" class="text-button" id="home-button">
+              Session settings
+            </button>
+          </div>
+          <div class="new-note-controls">
+            <label class="sr-only" for="new-note-mode">New note mode</label>
+            <select id="new-note-mode" name="new-note-mode">
+              <option value="journal">Journal</option>
+              <option value="rant">Rant</option>
+              <option value="words750">750 Words</option>
+            </select>
+            <button type="button" class="text-button" id="menu-new-button">
+              New note
+            </button>
+          </div>
+          <label id="goal-erase-choice" hidden
+            ><input type="checkbox" id="session-goal-erase" /> Erase after a
+            pause</label
+          >
+          <p id="goal-erase-help" class="session-detail" hidden></p>
           <p id="session-word-count" class="session-detail">0 words</p>
           <fieldset class="appearance-field">
             <legend>Appearance</legend>
@@ -213,6 +237,10 @@
               <p id="mode-description" class="mode-description">
                 A page to keep.
               </p>
+              <label id="goal-erase-setup" class="goal-erase-setup" hidden
+                ><input type="checkbox" id="goal-erase" /> Erase words when I
+                stop typing</label
+              >
               <details id="session-settings" class="session-settings">
                 <summary>
                   <span>Session settings</span
@@ -276,6 +304,14 @@
                 </button>
               </p>
             </form>
+            <button
+              type="button"
+              class="inline-link saved-notes-link"
+              id="landing-notes-button"
+              hidden
+            >
+              Open saved notes
+            </button>
           </div>
           <figure class="landscape">
             <img
@@ -295,9 +331,7 @@
           aria-label="Writing session"
         >
           <div class="completion-heading" id="completion-heading" hidden>
-            <p class="eyebrow" id="completion-eyebrow">
-              Writing complete.
-            </p>
+            <p class="eyebrow" id="completion-eyebrow">Writing complete.</p>
             <h1 id="completion-title" tabindex="-1">
               Session <em>finished.</em>
             </h1>
@@ -315,6 +349,13 @@
               </p>
             </div>
             <div class="resume-actions">
+              <button
+                type="button"
+                class="text-button"
+                id="paused-notes-button"
+              >
+                Notes
+              </button>
               <button type="button" class="primary" id="resume-button">
                 Resume writing <span aria-hidden="true">↗</span></button
               ><button type="button" class="text-button" id="keep-button">
@@ -371,6 +412,16 @@
               </button>
             </div>
             <div class="export-buttons">
+              <button type="button" class="text-button" id="edit-note-button">
+                Edit note
+              </button>
+              <button
+                type="button"
+                class="text-button"
+                id="completed-notes-button"
+              >
+                Notes
+              </button>
               <button type="button" class="text-button" id="copy-button">
                 Copy text</button
               ><button type="button" class="text-button" id="txt-button">
@@ -378,7 +429,7 @@
               ><button type="button" class="text-button" id="md-button">
                 Download .md</button
               ><button type="button" class="primary" id="new-button">
-                A fresh page <span aria-hidden="true">↗</span>
+                New note <span aria-hidden="true">↗</span>
               </button>
             </div>
           </div>
@@ -393,6 +444,42 @@
       </footer>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <dialog id="notes-dialog" aria-labelledby="notes-title">
+      <div class="dialog-top">
+        <p class="eyebrow">Saved only in this browser.</p>
+        <button
+          type="button"
+          class="text-button"
+          data-close
+          aria-label="Close notes"
+        >
+          Close ×
+        </button>
+      </div>
+      <h2 id="notes-title">Your <em>notes.</em></h2>
+      <p>
+        No account or cloud sync. Download important writing. Rant is never
+        saved.
+      </p>
+      <div id="notes-list" class="notes-list"></div>
+      <p id="notes-empty" hidden>
+        No saved notes yet. Journal and 750 Words appear here as you write.
+      </p>
+    </dialog>
+    <dialog id="rant-leave-dialog" aria-labelledby="rant-leave-title">
+      <h2 id="rant-leave-title">Erase this <em>rant?</em></h2>
+      <p>
+        Leaving this rant erases its words. Nothing will be saved or
+        recoverable. Its timer continues until you leave.
+      </p>
+      <div class="resume-actions">
+        <button type="button" class="text-button" id="cancel-rant-leave">
+          Keep writing</button
+        ><button type="button" class="primary" id="confirm-rant-leave">
+          Erase and continue
+        </button>
+      </div>
+    </dialog>
     <dialog id="about-dialog" aria-labelledby="about-title">
       <div class="dialog-top">
         <p class="eyebrow">A small writing ritual.</p>
@@ -538,6 +625,6 @@
         any writing anywhere.
       </p></noscript
     >
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=notes-1"></script>
   </body>
 </html>

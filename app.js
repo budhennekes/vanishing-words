@@ -5,7 +5,7 @@ import {
   MODES,
   countWords,
   WORD_GOAL,
-} from "./engine.js";
+} from "./engine.js?v=notes-1";
 
 const $ = (id) => document.getElementById(id);
 const editor = $("editor");
@@ -13,6 +13,52 @@ const mirror = $("dissolve-mirror");
 const PREFIX = "vanishing-words:v2:session:";
 const now = () => Date.now();
 const makeId = () => crypto.randomUUID();
+let diskVersion = null;
+let afterRantLeave = null;
+let resumeAfterNotes = false;
+let releaseNoteLock = null;
+let lockedNoteId = null;
+function claimNote() {
+  releaseNoteLock?.();
+  releaseNoteLock = null;
+  lockedNoteId = null;
+  if (!state || state.mode === "rant") return;
+  const id = state.id;
+  if (!navigator.locks) {
+    // Older engines keep a separate copy rather than risk overwriting another tab.
+    if (diskVersion !== null) {
+      state = { ...state, id: makeId() };
+      diskVersion = null;
+    }
+    lockedNoteId = state.id;
+    flushSave();
+    return;
+  }
+  navigator.locks
+    .request(`writing-note:${id}`, { ifAvailable: true }, async (lock) => {
+      if (state?.id !== id) return;
+      if (!lock) {
+        state = { ...state, id: makeId() };
+        diskVersion = null;
+        lastSaved = "";
+        notify(
+          "This note is open in another tab. You’re working in a separate copy.",
+        );
+        claimNote();
+        return;
+      }
+      lockedNoteId = id;
+      await new Promise((resolve) => {
+        releaseNoteLock = resolve;
+        flushSave();
+      });
+    })
+    .catch(() => {
+      storageWarning(
+        "This note could not be locked for safe saving. Copy or download before closing.",
+      );
+    });
+}
 let state = null;
 let selectedSnapshot = null;
 let saveTimer = null;
@@ -101,7 +147,22 @@ function storageWarning(message) {
 function flushSave() {
   clearTimeout(saveTimer);
   if (!state || state.mode === "rant") return true;
+  if (lockedNoteId !== state.id) return false;
   // No visual pending state is persisted. Save clocks at this instant, not the last keystroke.
+  try {
+    const existing = localStorage.getItem(PREFIX + state.id);
+    if (diskVersion !== null && existing !== diskVersion) {
+      state = { ...state, id: makeId() };
+      diskVersion = null;
+      claimNote();
+      notify(
+        "This note changed in another tab. Your edits are saved as a separate note.",
+      );
+      return false;
+    }
+  } catch {
+    /* The write below reports unavailable storage. */
+  }
   const record = {
     ...state,
     pending: null,
@@ -113,6 +174,7 @@ function flushSave() {
   try {
     localStorage.setItem(PREFIX + state.id, serialized);
     lastSaved = serialized;
+    diskVersion = serialized;
     if (storageFailed) {
       storageFailed = false;
       $("storage-warning").hidden = true;
@@ -185,8 +247,16 @@ function syncEditor(text) {
 }
 function renderClock() {
   if (!state) return;
+  if (state.editing) {
+    $("idle-status").textContent =
+      "Editing a saved note. No timer or automatic deletion.";
+    return;
+  }
   if (state.mode === "words750") {
-    $("idle-status").textContent = "No timer. No disappearing words.";
+    $("idle-status").textContent =
+      state.eraseOnPause && !state.editing
+        ? `No timer. Words erase after ${state.grace / 1000} seconds without typing.`
+        : "No timer. No disappearing words.";
     return;
   }
   const time = now();
@@ -227,9 +297,11 @@ function render() {
   const showCount = Boolean(state && appearance.wordCount[state.mode]);
   $("show-word-count").checked = showCount;
   $("goal-progress").hidden = !focused || !showCount;
-  $("session-clock").hidden = goal;
-  document.querySelector(".progress-choice").hidden = goal;
-  $("writing-bottom").hidden = !focused || !appearance.progress || goal;
+  $("session-clock").hidden = goal || Boolean(state?.editing);
+  document.querySelector(".progress-choice").hidden =
+    goal || Boolean(state?.editing);
+  $("writing-bottom").hidden =
+    !focused || !appearance.progress || goal || Boolean(state?.editing);
   $("controls-toggle").hidden = !focused;
   if (!focused) setControls(false);
   document.body.classList.toggle("focus-view", focused);
@@ -244,6 +316,13 @@ function render() {
     return;
   }
   const rant = state.mode === "rant";
+  $("edit-note-button").hidden = rant;
+  $("new-note-mode").value = state.mode;
+  $("goal-erase-choice").hidden = !goal || Boolean(state.editing);
+  $("goal-erase-help").hidden = !goal || Boolean(state.editing);
+  $("session-goal-erase").checked = Boolean(state.eraseOnPause);
+  $("goal-erase-help").textContent =
+    `Off by default. When on, words erase after ${state.grace / 1000} seconds without typing. Recovery snapshots stay in this browser.`;
   $("privacy-label").textContent = rant
     ? "Not saved. Erased when this session ends."
     : "Saved only in this browser.";
@@ -258,7 +337,7 @@ function render() {
     : "The session starts with your first word. Inactivity removes words after your chosen delay. Command or Control Shift Enter finishes and keeps your words.";
   if (goal)
     $("editor-help").textContent =
-      "Write toward 750 words. No timer or automatic deletion. Your draft is saved in this browser. You can keep writing past the goal or finish at any time with Command or Control Shift Enter.";
+      `Write toward 750 words. No timer. ${state.eraseOnPause && !state.editing ? "Words erase after a pause; recovery snapshots are saved locally." : "No automatic deletion."} Your draft is saved in this browser. Keep writing past the goal or finish at any time.`;
   editor.placeholder = {
     words750: "Start with whatever is on your mind…",
     journal: "What’s on your mind?",
@@ -311,9 +390,7 @@ function render() {
       "Your draft is here. Resume writing toward 750 words, or finish and keep what you have.";
   if (completed) {
     $("completion-eyebrow").textContent =
-      state.reason === "timer"
-        ? "Writing complete."
-        : "Session finished.";
+      state.reason === "timer" ? "Writing complete." : "Session finished.";
     $("completion-copy").textContent =
       state.reason === "timer"
         ? "Your time is up. Your words are yours to keep."
@@ -400,14 +477,20 @@ function setupChanged() {
   $("grace-value").max = unit === "seconds" ? "600" : "10";
   const note = $("grace-note");
   const goal = mode === "words750";
-  $("session-settings").hidden = goal;
-  for (const id of ["custom-minutes", "grace-value", "grace-unit"])
-    $(id).disabled = goal;
+  const erasing = goal && $("goal-erase").checked;
+  $("goal-erase-setup").hidden = !goal;
+  $("session-settings").hidden = goal && !erasing;
+  $("custom-row").hidden = goal;
+  $("custom-minutes").disabled = goal;
+  for (const id of ["grace-value", "grace-unit"])
+    $(id).disabled = goal && !erasing;
   note.textContent = goal
-    ? "No timer. No disappearing words. Saved in this browser."
+    ? erasing
+      ? `No timer. After ${value} ${unit} without typing, words begin to erase. Recovery stays in this browser.`
+      : "No timer. No disappearing words. Saved in this browser."
     : `Pause for ${value} ${unit} and your last words begin to fade.`;
   $("settings-summary").textContent =
-    `${minutes} min · ${value} ${unit === "seconds" ? "sec" : "min"} pause`;
+    `${goal ? "No timer" : `${minutes} min`} · ${value} ${unit === "seconds" ? "sec" : "min"} pause`;
   $("mode-description").textContent = goal
     ? "750 words for yourself. Inspired by The Artist’s Way."
     : mode === "rant"
@@ -430,13 +513,24 @@ function begin(event) {
   const minutes = mode === "words750" ? 10 : Number($("custom-minutes").value);
   try {
     const graceMs =
-      mode === "words750"
+      mode === "words750" && !$("goal-erase").checked
         ? MODES.words750.grace
         : Math.round(
             Number($("grace-value").value) *
               ($("grace-unit").value === "minutes" ? 60000 : 1000),
           );
-    state = createSession({ id: makeId(), mode, minutes, graceMs }, now());
+    state = createSession(
+      {
+        id: makeId(),
+        mode,
+        minutes,
+        graceMs,
+        eraseOnPause: $("goal-erase").checked,
+      },
+      now(),
+    );
+    diskVersion = null;
+    claimNote();
   } catch (error) {
     notify(error.message);
     return;
@@ -526,8 +620,9 @@ function loadDraft() {
       }
     }
     if (latest) {
-      // Fork restored snapshots: even duplicated/new tabs never write to the same session key.
-      state = { ...latest.restored, id: makeId() };
+      state = latest.restored;
+      diskVersion = localStorage.getItem(PREFIX + state.id);
+      claimNote();
       goalAnnounced =
         state.mode === "words750" && countWords(state.text) >= WORD_GOAL;
       render();
@@ -579,8 +674,7 @@ for (const button of document.querySelectorAll("[data-close]"))
 $("home-link").addEventListener("click", (event) => {
   if (!state) return;
   event.preventDefault();
-  if (state.status === "completed") $("new-button").click();
-  else finish();
+  goHome();
 });
 editor.addEventListener("input", () => {
   setControls(false);
@@ -695,21 +789,189 @@ $("current-button").addEventListener("click", () => {
   selectedSnapshot = null;
   render();
 });
-$("new-button").addEventListener("click", () => {
+function leaveSafely(action) {
+  if (state?.mode === "rant" && state.text) {
+    afterRantLeave = action;
+    $("rant-leave-dialog").showModal();
+    return;
+  }
+  if (state?.mode !== "rant") suspend("switching");
   if (!flushSave()) {
     notify(
-      "Download or copy first. A fresh page is unavailable while saving is blocked.",
+      "Save is blocked. Finish and copy or download before switching notes.",
     );
     return;
   }
-  state = null;
+  action();
+}
+function newNote(mode = state?.mode || "journal") {
+  const previous = state;
+  leaveSafely(() => {
+    state = createSession(
+      {
+        id: makeId(),
+        mode,
+        minutes: previous ? previous.duration / 60000 : 10,
+        graceMs: previous?.grace || 45000,
+        eraseOnPause: mode === "words750" && Boolean(previous?.eraseOnPause),
+      },
+      now(),
+    );
+    diskVersion = null;
+    lastSaved = "";
+    selectedSnapshot = null;
+    goalAnnounced = false;
+    claimNote();
+    stopDissolve();
+    setControls(false);
+    render();
+    flushSave();
+    window.scrollTo({ top: 0, behavior: "instant" });
+    editor.focus({ preventScroll: true });
+  });
+}
+function goHome() {
+  leaveSafely(() => {
+    state = null;
+    selectedSnapshot = null;
+    diskVersion = null;
+    lastSaved = "";
+    claimNote();
+    stopDissolve();
+    render();
+    $("landing-notes-button").hidden = false;
+    $("begin-button").focus({ preventScroll: true });
+  });
+}
+function openNotes() {
+  resumeAfterNotes = Boolean(
+    state &&
+    ["ready", "active"].includes(state.status) &&
+    state.mode !== "rant",
+  );
+  // Browsing notes never ends a rant; only selecting a different note does.
+  if (state?.mode !== "rant") suspend("notes");
+  if (!flushSave()) {
+    notify("Save is blocked. Copy or download before switching notes.");
+    return;
+  }
+  const list = $("notes-list");
+  list.replaceChildren();
+  const records = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith(PREFIX)) continue;
+      try {
+        const raw = JSON.parse(localStorage.getItem(key));
+        if (
+          restoreSession(raw, now()) &&
+          (raw.text.trim() || raw.snapshots.length)
+        )
+          records.push(raw);
+      } catch {
+        /* Keep unreadable data untouched. */
+      }
+    }
+  } catch {
+    storageWarning(
+      "Saved notes are unavailable. Your current page is still open.",
+    );
+  }
+  records.sort((a, b) => b.updatedAt - a.updatedAt);
+  for (const note of records) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "saved-note";
+    const title = document.createElement("strong");
+    title.textContent = (
+      note.text.trim().split("\n")[0] || "Recovered writing"
+    ).slice(0, 100);
+    const meta = document.createElement("span");
+    meta.textContent = `${MODES[note.mode].label} · ${countWords(note.text)} words · ${new Date(note.updatedAt).toLocaleDateString()}${state?.id === note.id ? " · Current" : ""}`;
+    button.append(title, meta);
+    button.addEventListener("click", () => {
+      $("notes-dialog").close();
+      resumeAfterNotes = false;
+      leaveSafely(() => {
+        let stored, restored;
+        try {
+          stored = localStorage.getItem(PREFIX + note.id);
+          restored = restoreSession(JSON.parse(stored), now());
+        } catch {
+          notify(
+            "This note could not be read. Your current page is unchanged.",
+          );
+          return;
+        }
+        if (!restored) {
+          notify("This note could not be opened. It has not been removed.");
+          return;
+        }
+        state = restored;
+        diskVersion = stored;
+        lastSaved = "";
+        selectedSnapshot = null;
+        claimNote();
+        goalAnnounced = countWords(state.text) >= WORD_GOAL;
+        stopDissolve();
+        render();
+        if (state.status === "suspended") dispatch({ type: "resume" });
+        editor.focus({ preventScroll: true });
+      });
+    });
+    list.append(button);
+  }
+  $("notes-empty").hidden = records.length > 0;
+  $("notes-dialog").showModal();
+}
+$("notes-dialog").addEventListener("close", () => {
+  if (resumeAfterNotes && state?.status === "suspended")
+    dispatch({ type: "resume" });
+  resumeAfterNotes = false;
+});
+for (const id of [
+  "notes-button",
+  "completed-notes-button",
+  "landing-notes-button",
+  "paused-notes-button",
+])
+  $(id).addEventListener("click", openNotes);
+$("home-button").addEventListener("click", goHome);
+$("new-button").addEventListener("click", () => newNote());
+$("menu-new-button").addEventListener("click", () =>
+  newNote($("new-note-mode").value),
+);
+$("edit-note-button").addEventListener("click", () => {
   selectedSnapshot = null;
-  lastSaved = "";
-  editor.value = "";
+  dispatch({ type: "edit" });
+  editor.focus({ preventScroll: true });
+});
+$("session-goal-erase").addEventListener("change", () => {
+  if (state?.mode !== "words750") return;
+  state = {
+    ...state,
+    eraseOnPause: $("session-goal-erase").checked,
+    pending: null,
+    lastInputAt: now(),
+  };
   stopDissolve();
   render();
-  window.scrollTo({ top: 0, behavior: "instant" });
-  $("begin-button").focus({ preventScroll: true });
+  flushSave();
+});
+$("cancel-rant-leave").addEventListener("click", () => {
+  afterRantLeave = null;
+  $("rant-leave-dialog").close();
+});
+$("rant-leave-dialog").addEventListener("cancel", () => {
+  afterRantLeave = null;
+});
+$("confirm-rant-leave").addEventListener("click", () => {
+  const action = afterRantLeave;
+  afterRantLeave = null;
+  dispatch({ type: "leave" });
+  $("rant-leave-dialog").close();
+  action?.();
 });
 document.addEventListener("keydown", (event) => {
   if (
