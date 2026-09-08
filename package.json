@@ -1,7 +1,7 @@
 {
   "name": "room-to-write",
   "productName": "Room to Write",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",

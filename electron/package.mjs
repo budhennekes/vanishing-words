@@ -29,7 +29,7 @@ await fs.writeFile(
   JSON.stringify({
     name: "room-to-write",
     productName: "Room to Write",
-    version: "0.1.0",
+    version: "0.2.0",
     main: "electron/main.cjs",
   }),
 );

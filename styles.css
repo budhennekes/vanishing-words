@@ -1852,6 +1852,153 @@ body:not(.session-view) .site-header .text-button:hover {
   background: #1b2227;
 }
 
+/* Consistent, quiet destinations outside the settings disclosure. */
+.page-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 12;
+  color: var(--muted);
+}
+.page-navigation div {
+  display: flex;
+  gap: 24px;
+}
+.page-navigation button {
+  font: 500 13px var(--font-sans);
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 10px 0;
+  min-height: 44px;
+  cursor: pointer;
+}
+.page-navigation button:hover {
+  color: var(--ink);
+}
+.focus-view .page-navigation {
+  position: fixed;
+  top: 22px;
+  left: clamp(26px, 5.3vw, 86px);
+  right: 100px;
+  background: var(--paper);
+}
+#page-timer {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.completed .page-navigation {
+  color: #dedfd7;
+}
+.completed .page-navigation button:hover {
+  color: #fff;
+}
+.let-go-button {
+  display: block;
+  margin: 22px auto 0;
+  padding: 10px 22px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  font: 500 14px var(--font-sans);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.let-go-button:hover {
+  color: var(--ink);
+  border-color: var(--sage);
+}
+.focus-view .let-go-button {
+  position: fixed;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  z-index: 15;
+  background: var(--paper);
+}
+.focus-view.is-rant .editor-wrap textarea {
+  padding-bottom: 90px;
+}
+.completed.is-rant .note-surface {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+}
+.completed.is-rant .completion-actions {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.completed.is-rant .export-buttons {
+  margin: 0;
+}
+.completed.is-rant .export-buttons .primary {
+  margin-left: 0;
+  background: #f7f6f0;
+  color: #21392d;
+}
+.completed.is-rant #completed-notes-button {
+  display: none;
+}
+.released-words {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  white-space: pre-wrap;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+#notes-search {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 10px 12px;
+  font: inherit;
+}
+.home-recent-notes {
+  display: grid;
+  margin-top: 8px;
+}
+.home-recent-notes button {
+  background: none;
+  border: 0;
+  border-top: 1px solid rgb(247 246 240 / 12%);
+  text-align: left;
+  color: #dedfd7;
+  min-height: 44px;
+  padding: 9px 0;
+  font-size: 13px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.home-recent-notes button:hover {
+  color: #fff;
+}
+@media (max-width: 600px) {
+  .focus-view .page-navigation {
+    left: 22px;
+    right: 70px;
+    top: 12px;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .page-navigation div {
+    gap: 18px;
+  }
+  #page-timer {
+    padding: 0 0 6px;
+  }
+}
 /* Home is a calm starting point, including when saved notes exist. */
 .home-library {
   border-top: 1px solid rgb(247 246 240 / 24%);

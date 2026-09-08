@@ -52,7 +52,7 @@
           document.documentElement.dataset.paperTone = saved.tone;
       })();
     </script>
-    <link rel="stylesheet" href="styles.css?v=room-to-write-1" />
+    <link rel="stylesheet" href="styles.css?v=release-2" />
   </head>
   <body>
     <div id="app">
@@ -70,6 +70,24 @@
         </button>
       </header>
       <p id="storage-warning" class="storage-warning" role="alert" hidden></p>
+      <nav
+        id="page-navigation"
+        class="page-navigation"
+        aria-label="Writing navigation"
+        hidden
+      >
+        <div>
+          <button type="button" id="nav-home">Home</button
+          ><button type="button" id="nav-notes">Notes</button
+          ><button type="button" id="nav-new">New note</button>
+        </div>
+        <span
+          id="page-timer"
+          role="timer"
+          aria-label="Session time remaining"
+          hidden
+        ></span>
+      </nav>
       <main>
         <button
           type="button"
@@ -191,6 +209,10 @@
               >
             </div>
           </fieldset>
+          <label
+            ><input type="checkbox" id="show-session-timer" checked /> Show time
+            remaining</label
+          >
           <label class="word-count-choice"
             ><input
               type="checkbox"
@@ -333,6 +355,12 @@
                 </button>
               </div>
               <p id="home-last-note" hidden></p>
+              <div
+                id="home-recent-notes"
+                role="group"
+                class="home-recent-notes"
+                aria-label="Recent notes"
+              ></div>
             </div>
           </div>
           <figure class="landscape">
@@ -425,6 +453,14 @@
                 <div id="idle-fill"></div>
               </div>
             </div>
+            <button
+              type="button"
+              id="let-go-button"
+              class="let-go-button"
+              hidden
+            >
+              Let go <span aria-hidden="true">↑</span>
+            </button>
             <div class="completion-actions" id="completion-actions" hidden>
               <div class="export-source">
                 <p id="export-source">Current text</p>
@@ -490,6 +526,14 @@
         No account or cloud sync. Download important writing. Rant is never
         saved.
       </p>
+      <label class="sr-only" for="notes-search">Search notes</label>
+      <input
+        type="search"
+        id="notes-search"
+        placeholder="Search your notes"
+        autocomplete="off"
+      />
+      <p id="notes-no-results" hidden>No matching notes.</p>
       <div id="notes-list" class="notes-list"></div>
       <p id="notes-empty" hidden>
         No saved notes yet. Journal and 750 Words appear here as you write.
@@ -654,6 +698,6 @@
         any writing anywhere.
       </p></noscript
     >
-    <script type="module" src="app.js?v=room-to-write-1"></script>
+    <script type="module" src="app.js?v=release-2"></script>
   </body>
 </html>

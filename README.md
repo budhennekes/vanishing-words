@@ -37,13 +37,21 @@ Notes stay in the app’s local Chromium storage under its macOS application-sup
 
 This is a local test build, not a signed/notarized customer release. The repository URL and legacy storage keys remain unchanged to preserve existing web drafts. The product’s displayed name is Room to Write; commercial name clearance is still pending.
 
+## Visible navigation and release
+
+The writing page exposes **Home**, **Notes**, and **New note** without opening settings. Timed sessions show time remaining by default; hide it with **Show time remaining** in Session options. Untimed 750 Words and editing finished notes never show a session countdown. The inactivity delay remains separate.
+
+Notes supports full-text search. Library entries open read-only without starting timers or changing the saved record. **Edit note** begins untimed editing. Home shows up to three recent entries, plus the explicit Continue/Open last note action.
+
+Rant has a visible **Let go** button. It stops the session and clears its state immediately; an ephemeral display copy drifts away for less than a second, then is removed. Reduce Motion uses a short fade. Nothing is uploaded or stored. The scenic release screen offers **Start another rant**.
+
 ## Notes and navigation
 
 The app opens on the scenic home screen, even when saved writing exists. Choose **New note**, **Continue last note** (or **Open last note** for finished writing), or **Notes**. Nothing resumes or deletes words until you explicitly reopen a note.
 
 Open **Notes** in Session options or from a finished or paused page. Notes use the first line as their title. **New note** saves the current page and opens a blank one in the current mode without visiting setup. The menu also lets you choose another mode for the new page. **Back to start screen** explicitly returns to setup.
 
-Opening Notes pauses retained sessions. Selecting a page resumes its saved remaining time; completed pages open for reading. **Edit note** lets you revise a completed page without restarting its timer or deletion. Failed saves block navigation away from the current draft. Leaving a nonempty Rant for another note asks before erasing it. Rant never appears in Notes.
+Opening Notes pauses retained sessions. Selecting a library page opens it for reading without resuming its clock; Continue last note from Home explicitly resumes unfinished writing. **Edit note** lets you revise a completed page without restarting its timer or deletion. Failed saves block navigation away from the current draft. Leaving a nonempty Rant for another note asks before erasing it. Rant never appears in Notes.
 
 750 Words has an **Erase after a pause** toggle in Session options. Turning it off cancels pending deletion. When enabled, words disappear after the configured delay, but exact pre-deletion snapshots remain recoverable. This is a writing aid, not disposable Rant behavior.
 
