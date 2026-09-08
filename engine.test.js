@@ -104,7 +104,7 @@ test("restoring an active draft is safe even past its old deadline", () => {
 });
 test("mode grace, duration validation and word count", () => {
   for (const [mode, grace] of [
-    ["journal", 12000],
+    ["journal", 15000],
     ["content", 8000],
     ["sprint", 4000],
   ]) {

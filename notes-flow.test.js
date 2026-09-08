@@ -40,6 +40,14 @@ test("750 Words erasing is optional, untimed, recoverable and stoppable", () => 
   s = transition(s, { type: "tick" }, 900000);
   assert.equal(s.text, "Keep writing ");
 });
+test("new public modes default to fifteen seconds while stored delays survive", () => {
+  for (const mode of ["journal", "rant", "words750"]) {
+    const s = createSession({ id: mode, mode }, 0);
+    assert.equal(s.grace, 15000);
+  }
+  const s = createSession({ id: "old", mode: "journal", graceMs: 45000 }, 0);
+  assert.equal(restoreSession(s, 2000).grace, 45000);
+});
 test("Rant cannot become a saved editable note", () => {
   let s = createSession({ id: "rant", mode: "rant" }, 0);
   s = transition(s, { type: "finish" }, 1);

@@ -1,10 +1,10 @@
-# Vanishing Words
+# Room to Write
 
 A quiet writing app. Let a thought out before you edit it away.
 
 ## Try it
 
-[Open Vanishing Words](https://budhennekes.github.io/vanishing-words/)
+[Open Room to Write](https://budhennekes.github.io/vanishing-words/)
 
 - **Journal:** Keep your writing. Recovery snapshots are available after automatic deletions.
 - **Rant:** Write without keeping a record. Nothing is saved. Remaining text is erased when the session ends, you finish, or you leave.
@@ -13,7 +13,7 @@ A quiet writing app. Let a thought out before you edit it away.
 Choose a mode and start. In Journal and Rant, open **Session settings** to change the two independent timers:
 
 - **Write for:** 1–240 whole minutes; default 10.
-- **Delete after:** 1 second–10 minutes without typing; default 45 seconds.
+- **Delete after:** 1 second–10 minutes without typing; default 15 seconds.
 
 Switching modes preserves both settings. In 750 Words, the duration control is disabled. Enabling erasing reveals the independent deletion delay; the goal still has no timer. In the timed modes, the clock begins on the first non-whitespace input. After the pause, the last word dissolves and disappears. Typing cancels deletion immediately. Session completion takes priority over deletion.
 
@@ -27,7 +27,19 @@ The writing canvas shows text and one three-dot Session options control. A **Sho
 
 The native textarea preserves selection, paste, cursor movement, and IME composition. Reduced-motion preferences are respected. Opening session options does not pause either clock.
 
+## Mac test app
+
+This repository includes an Electron wrapper for local Apple Silicon testing. Run `npm ci`, then `npm run desktop` to launch from source, or `npm run desktop:package` to create a self-contained `.app` under `~/Documents/RoomToWriteBuilds/`.
+
+The Mac app bundles its fonts and photographs and works without the hosted website. It uses an isolated, sandboxed renderer with no Node access. Only bundled runtime files are served; remote HTTP requests, new windows, and permissions other than fullscreen are blocked.
+
+Notes stay in the app’s local Chromium storage under its macOS application-support directory. They persist across quits, but are not encrypted files or an automatic backup. Export important writing. Web and Mac notes are separate and do not sync. Removing app data can remove notes. Rant never saves a record.
+
+This is a local test build, not a signed/notarized customer release. The repository URL and legacy storage keys remain unchanged to preserve existing web drafts. The product’s displayed name is Room to Write; commercial name clearance is still pending.
+
 ## Notes and navigation
+
+The app opens on the scenic home screen, even when saved writing exists. Choose **New note**, **Continue last note** (or **Open last note** for finished writing), or **Notes**. Nothing resumes or deletes words until you explicitly reopen a note.
 
 Open **Notes** in Session options or from a finished or paused page. Notes use the first line as their title. **New note** saves the current page and opens a blank one in the current mode without visiting setup. The menu also lets you choose another mode for the new page. **Back to start screen** explicitly returns to setup.
 
@@ -51,7 +63,7 @@ The writing surface, menus, completion view, dialogs, recovery fields, selection
 
 The app does not transmit your writing. We do not receive or store copies of it. The recovery link explains local storage before writing; the recovery picker repeats this boundary. If browser data is removed, we cannot restore it for you. Journal and 750 Words drafts, plus exact, bounded recovery snapshots, live in this browser’s localStorage. This is not encryption or a backup service. Export important writing. Clearing browser data can remove drafts. Localhost and the hosted app have separate storage; drafts do not sync between them.
 
-Journal stops safely when you switch tabs. Reloaded drafts require explicit resume. Reload keeps the same note ID. Browser locks give a second tab its own copy when the original note is still open, so the tabs cannot overwrite one another. Browsers without lock support restore separate copies for safety. Older Content/Sprint drafts remain readable for compatibility; these modes are no longer offered.
+Journal stops safely when you switch tabs. Reload returns home; use Continue last note to resume a saved draft. Reload keeps the same note ID. Browser locks give a second tab its own copy when the original note is still open, so the tabs cannot overwrite one another. Browsers without lock support restore separate copies for safety. Older Content/Sprint drafts remain readable for compatibility; these modes are no longer offered.
 
 Recovery retains the exact page before the first automatic deletion plus up to 19 recent snapshots. It is not a full typing history. Copies and TXT/Markdown exports preserve the selected text exactly.
 

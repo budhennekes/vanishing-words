@@ -5,7 +5,7 @@ import {
   MODES,
   countWords,
   WORD_GOAL,
-} from "./engine.js?v=completion-1";
+} from "./engine.js?v=room-to-write-1";
 
 const $ = (id) => document.getElementById(id);
 const editor = $("editor");
@@ -60,6 +60,7 @@ function claimNote() {
     });
 }
 let state = null;
+let lastHomeNote = null;
 let selectedSnapshot = null;
 let saveTimer = null;
 let toastTimer = null;
@@ -542,7 +543,7 @@ function setupChanged() {
   $("recovery-note").hidden = rant || goal;
   $("begin-button").innerHTML = rant
     ? 'Start rant <span aria-hidden="true">↗</span>'
-    : 'Start writing <span aria-hidden="true">↗</span>';
+    : 'New note <span aria-hidden="true">↗</span>';
   $("privacy-label").textContent = rant
     ? "Rant is never saved."
     : "Saved only in this browser.";
@@ -613,7 +614,7 @@ function download(extension) {
       : selectedSnapshot === 0
         ? "original"
         : "recovery";
-  a.download = `vanishing-words-${source}-${new Date().toISOString().slice(0, 10)}.${extension}`;
+  a.download = `room-to-write-${source}-${new Date().toISOString().slice(0, 10)}.${extension}`;
   document.body.append(a);
   a.click();
   a.remove();
@@ -654,24 +655,24 @@ function loadDraft() {
           invalid = true;
           continue;
         }
+        if (!raw.text.trim() && !raw.snapshots.length) continue;
         if (!latest || raw.updatedAt > latest.savedAt)
           latest = { restored, savedAt: raw.updatedAt };
       } catch {
         invalid = true;
       }
     }
-    if (latest) {
-      state = latest.restored;
-      diskVersion = localStorage.getItem(PREFIX + state.id);
-      claimNote();
-      goalAnnounced =
-        state.mode === "words750" && countWords(state.text) >= WORD_GOAL;
-      render();
-      notify(
-        state.status === "completed"
-          ? "Your last page is here, just as you left it."
-          : "Draft restored safely. Resume only when you’re ready.",
-      );
+    lastHomeNote = latest?.restored || null;
+    $("continue-note-button").hidden = !lastHomeNote;
+    $("home-last-note").hidden = !lastHomeNote;
+    if (lastHomeNote) {
+      $("continue-note-button").textContent =
+        lastHomeNote.status === "completed"
+          ? "Open last note"
+          : "Continue last note";
+      $("home-last-note").textContent = (
+        lastHomeNote.text.trim().split("\n")[0] || "Recovered writing"
+      ).slice(0, 100);
     }
     if (invalid)
       storageWarning(
@@ -684,6 +685,29 @@ function loadDraft() {
   }
 }
 
+$("continue-note-button").addEventListener("click", () => {
+  if (!lastHomeNote || state) return;
+  try {
+    const stored = localStorage.getItem(PREFIX + lastHomeNote.id);
+    const restored = restoreSession(JSON.parse(stored), now());
+    if (!restored) {
+      notify("This note is unavailable. Browse Notes for your saved pages.");
+      return;
+    }
+    state = restored;
+    diskVersion = stored;
+    lastSaved = "";
+    selectedSnapshot = null;
+    claimNote();
+    render();
+    if (state.status === "suspended") dispatch({ type: "resume" });
+    editor.focus({ preventScroll: true });
+  } catch {
+    notify(
+      "This note could not be read. Your saved data has not been removed.",
+    );
+  }
+});
 $("setup-form").addEventListener("submit", begin);
 $("setup-form").addEventListener(
   "invalid",
@@ -854,7 +878,7 @@ function newNote(mode = state?.mode || "journal") {
         id: makeId(),
         mode,
         minutes: previous ? previous.duration / 60000 : 10,
-        graceMs: previous?.grace || 45000,
+        graceMs: previous?.grace || 15000,
         eraseOnPause: mode === "words750" && Boolean(previous?.eraseOnPause),
       },
       now(),
@@ -882,6 +906,7 @@ function goHome() {
     stopDissolve();
     render();
     $("landing-notes-button").hidden = false;
+    loadDraft();
     $("begin-button").focus({ preventScroll: true });
   });
 }
@@ -981,6 +1006,7 @@ for (const id of [
   $(id).addEventListener("click", openNotes);
 $("home-button").addEventListener("click", goHome);
 $("new-button").addEventListener("click", () => newNote());
+$("paused-new-button").addEventListener("click", () => newNote());
 $("menu-new-button").addEventListener("click", () =>
   newNote($("new-note-mode").value),
 );

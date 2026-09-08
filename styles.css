@@ -1852,6 +1852,36 @@ body:not(.session-view) .site-header .text-button:hover {
   background: #1b2227;
 }
 
+/* Home is a calm starting point, including when saved notes exist. */
+.home-library {
+  border-top: 1px solid rgb(247 246 240 / 24%);
+  margin-top: 22px;
+  padding-top: 12px;
+  max-width: 440px;
+}
+.home-library-actions {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+.home-library-actions button {
+  color: #f7f6f0;
+  min-height: 44px;
+  font-size: 14px;
+}
+.home-library-actions button:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+#home-last-note {
+  margin: 0;
+  color: #dedfd7;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 /* One scenic completion frame; plain paper only while writing or editing. */
 .note-surface {
   display: contents;

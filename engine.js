@@ -1,10 +1,10 @@
 /** Pure session state machine. Every clock value is supplied by the caller. */
 export const MODES = Object.freeze({
-  journal: { label: "Journal", grace: 12000 },
-  words750: { label: "750 Words", grace: 45000 },
+  journal: { label: "Journal", grace: 15000 },
+  words750: { label: "750 Words", grace: 15000 },
   content: { label: "Content", grace: 8000 },
   sprint: { label: "Sprint", grace: 4000 },
-  rant: { label: "Rant", grace: 45000 },
+  rant: { label: "Rant", grace: 15000 },
 });
 export const WORD_GOAL = 750;
 export const FADE_MS = 700;
@@ -221,7 +221,10 @@ export function restoreSession(raw, now) {
   if (!Number.isFinite(remaining)) return null;
   return {
     ...raw,
-    grace: raw.grace ?? MODES[raw.mode].grace,
+    grace:
+      raw.grace ??
+      { journal: 12000, words750: 45000 }[raw.mode] ??
+      MODES[raw.mode].grace,
     snapshots:
       raw.snapshots.length > MAX_SNAPSHOTS
         ? [raw.snapshots[0], ...raw.snapshots.slice(-(MAX_SNAPSHOTS - 1))]

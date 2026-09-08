@@ -8,7 +8,7 @@
       name="description"
       content="Write without overthinking. Journal and keep your page, rant without saving, or write toward 750 words. Your writing stays in your browser."
     />
-    <title>Vanishing Words — a little less thinking</title>
+    <title>Room to Write — write without overthinking</title>
     <link
       rel="preload"
       href="assets/InterVariable.woff2"
@@ -52,7 +52,7 @@
           document.documentElement.dataset.paperTone = saved.tone;
       })();
     </script>
-    <link rel="stylesheet" href="styles.css?v=completion-1" />
+    <link rel="stylesheet" href="styles.css?v=room-to-write-1" />
   </head>
   <body>
     <div id="app">
@@ -61,8 +61,8 @@
           href="./"
           class="wordmark"
           id="home-link"
-          aria-label="Vanishing Words home"
-          >vanishing <em>words</em
+          aria-label="Room to Write home"
+          >room to <em>write</em
           ><span class="wordmark-dot" aria-hidden="true">.</span></a
         >
         <button type="button" class="text-button" id="about-button">
@@ -254,7 +254,7 @@
               <details id="session-settings" class="session-settings">
                 <summary>
                   <span>Session settings</span
-                  ><span id="settings-summary">10 min · 45 sec pause</span>
+                  ><span id="settings-summary">10 min · 15 sec pause</span>
                 </summary>
                 <div class="settings-fields">
                   <div class="duration-field custom-row" id="custom-row">
@@ -279,7 +279,7 @@
                         type="number"
                         id="grace-value"
                         name="grace-value"
-                        value="45"
+                        value="15"
                         min="1"
                         max="600"
                         step="any"
@@ -295,7 +295,7 @@
                 </div>
               </details>
               <p class="grace-note" id="grace-note">
-                Pause for 45 seconds and your last words begin to fade.
+                Pause for 15 seconds and your last words begin to fade.
               </p>
               <p class="rant-note" id="rant-note" hidden>
                 Nothing is saved. No recovery. That’s the point. Your words are
@@ -314,14 +314,26 @@
                 </button>
               </p>
             </form>
-            <button
-              type="button"
-              class="inline-link saved-notes-link"
-              id="landing-notes-button"
-              hidden
-            >
-              Open saved notes
-            </button>
+            <div class="home-library" aria-label="Your writing">
+              <div class="home-library-actions">
+                <button
+                  type="button"
+                  class="inline-link"
+                  id="continue-note-button"
+                  hidden
+                >
+                  Continue last note
+                </button>
+                <button
+                  type="button"
+                  class="inline-link"
+                  id="landing-notes-button"
+                >
+                  Notes <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <p id="home-last-note" hidden></p>
+            </div>
           </div>
           <figure class="landscape">
             <img
@@ -367,6 +379,9 @@
                 id="paused-notes-button"
               >
                 Notes
+              </button>
+              <button type="button" class="text-button" id="paused-new-button">
+                New note
               </button>
               <button type="button" class="primary" id="resume-button">
                 Resume writing <span aria-hidden="true">↗</span></button
@@ -639,6 +654,6 @@
         any writing anywhere.
       </p></noscript
     >
-    <script type="module" src="app.js?v=completion-1"></script>
+    <script type="module" src="app.js?v=room-to-write-1"></script>
   </body>
 </html>
