@@ -2,9 +2,10 @@
 export const MODES = Object.freeze({
   journal: { label: "Journal", grace: 15000 },
   words750: { label: "750 Words", grace: 15000 },
+  brainstorm: { label: "Brainstorm", grace: 15000 },
   content: { label: "Content", grace: 8000 },
   sprint: { label: "Sprint", grace: 4000 },
-  rant: { label: "Rant", grace: 15000 },
+  rant: { label: "Let it go", grace: 15000 },
 });
 export const WORD_GOAL = 750;
 export const FADE_MS = 700;
@@ -50,7 +51,8 @@ export function createSession(
   };
 }
 export function transition(state, event, now) {
-  const goal = state.mode === "words750" || state.editing === true;
+  const goal =
+    state.mode === "words750" || state.mode === "brainstorm" || state.editing === true;
   if (
     event.type === "edit" &&
     state.status === "completed" &&
@@ -66,6 +68,10 @@ export function transition(state, event, now) {
       reason: null,
       updatedAt: now,
     };
+  // Editing is deliberately untimed. A delayed interval or page suspension
+  // must not reintroduce a pending disappearance after the user chooses Edit.
+  if (state.editing === true && ["tick", "suspend"].includes(event.type))
+    return state;
   const due = !goal && state.status === "active" && now >= state.deadline;
   if (state.mode === "rant") {
     if (due || event.type === "finish" || event.type === "leave") {
@@ -215,7 +221,10 @@ export function restoreSession(raw, now) {
   )
     return null;
   const remaining =
-    raw.status === "active" && raw.mode !== "words750" && !raw.editing
+    raw.status === "active" &&
+    raw.mode !== "words750" &&
+    raw.mode !== "brainstorm" &&
+    !raw.editing
       ? Math.max(0, Math.min(raw.duration, raw.deadline - raw.updatedAt))
       : Math.max(0, Math.min(raw.duration, raw.remaining));
   if (!Number.isFinite(remaining)) return null;

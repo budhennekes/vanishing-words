@@ -136,3 +136,31 @@ test("Begin waits for the first nonempty input to start time", () => {
   assert.equal(s.status, "active");
   assert.equal(s.deadline, 305000);
 });
+test("editing a completed note stays intact through later tick and suspension gaps", () => {
+  let s = start("One two three", 5, "journal");
+  s = engine.transition(s, { type: "finish" }, 1000);
+  s = engine.transition(s, { type: "edit" }, 1001);
+  assert.equal(s.editing, true);
+  assert.equal(s.deadline, null);
+  assert.equal(s.pending, null);
+  const editing = s;
+  for (const event of [
+    { type: "tick" },
+    { type: "suspend", reason: "hidden" },
+    { type: "tick" },
+    { type: "suspend", reason: "interrupted" },
+  ]) {
+    s = engine.transition(s, event, 900000);
+    assert.equal(s, editing);
+    assert.equal(s.text, "One two three");
+    assert.equal(s.snapshots.length, 0);
+  }
+});
+test("Brainstorm is untimed and never erases answers", () => {
+  let s = engine.createSession({ id: "brainstorm", mode: "brainstorm", minutes: 10 }, 0);
+  s = engine.transition(s, { type: "input", text: "A retained answer" }, 1000);
+  assert.equal(s.deadline, null);
+  s = engine.transition(s, { type: "tick" }, 60000);
+  assert.equal(s.text, "A retained answer");
+  assert.equal(s.pending, null);
+});

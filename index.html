@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f7f6f0" />
     <meta
       name="description"
-      content="Write without overthinking. Journal and keep your page, rant without saving, or write toward 750 words. Your writing stays in your browser."
+      content="Write without overthinking. Journal and keep your page, let it go without saving, or write toward 750 words. Your writing stays in your browser."
     />
     <title>Let It Out | Write without overthinking</title>
     <link
@@ -30,6 +30,20 @@
       type="font/ttf"
       crossorigin
     />
+    <link
+      rel="preload"
+      href="assets/Lora-Variable.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="assets/DMMono-Regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
     <script>
       // Resolve appearance before CSS paints; never read draft contents here.
       (() => {
@@ -42,8 +56,12 @@
         const mode = ["light", "dark", "system"].includes(saved?.colorMode)
           ? saved.colorMode
           : "system";
+        const wash = ["linen", "sea-glass", "blue-hour", "apricot-haze", "dusk", "after-hours", "matrix"].includes(saved?.wash) ? saved.wash : "plain";
+        const ink = ["default", "green", "amber"].includes(saved?.ink) ? saved.ink : "default";
+        document.documentElement.dataset.pageWash = wash;
+        document.documentElement.dataset.writingInk = wash === "matrix" && ink === "default" ? "green" : ink;
         document.documentElement.dataset.theme =
-          mode === "system"
+          wash !== "plain" ? wash === "after-hours" ? "dark" : "light" : mode === "system"
             ? matchMedia("(prefers-color-scheme: dark)").matches
               ? "dark"
               : "light"
@@ -79,15 +97,18 @@
         <div>
           <button type="button" id="nav-home">Home</button
           ><button type="button" id="nav-notes">Notes</button
-          ><button type="button" id="nav-new">New note</button>
+          ><button type="button" id="nav-new">New entry</button>
         </div>
-        <span
-          id="page-timer"
-          role="timer"
-          aria-label="Session time remaining"
-          hidden
-        ></span>
+        <span id="nav-mode" aria-label="Current writing mode">Journal</span>
       </nav>
+      <span
+        id="page-timer"
+        class="page-status"
+        role="timer"
+        aria-label="Session time remaining"
+        hidden
+      ></span>
+      <span id="editing-status" class="page-status" hidden>Editing · No timer</span>
       <main>
         <button
           type="button"
@@ -138,14 +159,8 @@
             </button>
           </div>
           <div class="new-note-controls">
-            <label class="sr-only" for="new-note-mode">New note mode</label>
-            <select id="new-note-mode" name="new-note-mode">
-              <option value="journal">Journal</option>
-              <option value="rant">Rant</option>
-              <option value="words750">750 Words</option>
-            </select>
             <button type="button" class="text-button" id="menu-new-button">
-              New note
+              New entry: choose a mode
             </button>
           </div>
           <label id="goal-erase-choice" hidden
@@ -209,10 +224,31 @@
               >
             </div>
           </fieldset>
+          <label class="wash-choice" for="page-wash">Writing background</label>
+          <select id="page-wash" aria-describedby="wash-help">
+            <option value="plain">Plain (page color)</option>
+            <option value="linen">Linen</option>
+            <option value="sea-glass">Sea Glass</option>
+            <option value="blue-hour">Blue Hour</option>
+            <option value="apricot-haze">Apricot Haze</option>
+            <option value="dusk">Dusk</option>
+            <option value="after-hours">After Hours</option>
+            <option value="matrix">Matrix (black)</option>
+          </select>
+          <p id="wash-help" class="session-detail">Static backgrounds use their own light or dark colors. Plain follows Appearance and Page color.</p>
+          <fieldset class="ink-field">
+            <legend>Writing text</legend>
+            <div class="choices ink-options">
+              <label><input type="radio" name="writing-ink" value="default" checked /><span>Default</span></label>
+              <label><input type="radio" name="writing-ink" value="green" /><span>Green</span></label>
+              <label><input type="radio" name="writing-ink" value="amber" /><span>Amber</span></label>
+            </div>
+          </fieldset>
           <label
             ><input type="checkbox" id="show-session-timer" checked /> Show time
             remaining</label
           >
+          <label class="word-count-choice"><input type="checkbox" id="check-spelling" name="check-spelling" /> Check spelling</label>
           <label class="word-count-choice"
             ><input
               type="checkbox"
@@ -237,14 +273,44 @@
         </section>
 
         <section class="landing" id="landing" aria-labelledby="hero-title">
-          <div class="landing-copy">
+          <section id="welcome" class="landing-copy welcome-copy" aria-labelledby="welcome-title" hidden>
+            <div id="welcome-practice">
+              <h1 id="welcome-title" tabindex="-1">Keep the words <em>coming.</em></h1>
+              <p class="welcome-intro">Keep writing. Pause, and your last words start disappearing, one at a time. Type again to stop them disappearing.</p>
+              <p id="demo-help" class="demo-help">A faster preview: a 3-second pause, instead of the real 15-second default. This sample is never saved. Your notes are untouched.</p>
+              <button type="button" class="primary" id="demo-start">Try disappearing words</button>
+              <div class="demo-page">
+                <label class="sr-only" for="demo-editor">Practice writing, never saved</label>
+                <textarea id="demo-editor" rows="3" spellcheck="false" readonly aria-describedby="demo-help demo-status" placeholder="Start the preview to try a sample."></textarea>
+                <div id="demo-mirror" class="demo-mirror" aria-hidden="true"></div>
+              </div>
+              <p id="demo-status" class="demo-status" role="status">Try the sample, or go straight to the next step.</p>
+              <button type="button" class="text-button" id="welcome-next">Next: what stays</button>
+            </div>
+            <div id="welcome-retention" hidden>
+              <h1 id="welcome-retention-title" tabindex="-1">Keep it. Or <em>let go.</em></h1>
+              <p class="demo-help">Session duration is separate: it sets how long you write. The inactivity delay sets when words start disappearing.</p>
+              <div class="welcome-modes">
+                <p><strong>Journal</strong> saves your page only in this browser. Words start disappearing after 15 seconds without typing by default. Recovery snapshots keep copies from before automatic deletion.</p>
+                <p><strong>Let it go</strong> saves nothing. Words disappear after a pause. Ending or leaving erases the rest. No recovery.</p>
+                <p><strong>750 Words</strong> saves locally, with no timer. Erasing after a pause is optional and off by default.</p>
+              </div>
+              <p class="welcome-storage">Local storage is not a backup and is not encrypted by this app. Download important writing. No account or cloud sync.</p>
+              <div class="welcome-actions">
+                <button type="button" class="primary" id="welcome-start">Choose a writing mode</button>
+                <button type="button" class="text-button" id="welcome-back">Back to the sample</button>
+              </div>
+            </div>
+            <button type="button" class="text-button welcome-skip" id="welcome-skip">Skip introduction</button>
+          </section>
+          <div class="landing-copy" id="home-copy">
             <h1 id="hero-title">Let it <em>out.</em></h1>
             <p class="intro">
               Write without overthinking. Keep your words or let them go.
             </p>
             <form id="setup-form">
               <fieldset class="mode-field">
-                <legend class="sr-only">Writing mode</legend>
+                <legend>Choose a writing mode</legend>
                 <div class="choices mode-choices">
                   <label
                     ><input
@@ -252,16 +318,21 @@
                       name="mode"
                       value="journal"
                       checked
-                    /><span>Journal</span></label
+                    /><span><strong>Journal</strong><small>A timed page to keep. Disappearing words with local recovery.</small></span></label
                   >
                   <label
                     ><input type="radio" name="mode" value="rant" /><span
-                      >Rant</span
+                      ><strong>Let it go</strong><small>A timed release. Nothing saved, no recovery.</small></span
                     ></label
                   >
                   <label
                     ><input type="radio" name="mode" value="words750" /><span
-                      >750 Words</span
+                      ><strong>750 Words</strong><small>A page to keep. No timer; disappearing words off by default.</small></span
+                    ></label
+                  >
+                  <label
+                    ><input type="radio" name="mode" value="brainstorm" /><span
+                      ><strong>Brainstorm</strong><small>Questions and answers to keep. No timer or automatic erasing.</small></span
                     ></label
                   >
                 </div>
@@ -270,17 +341,13 @@
                 A page to keep.
               </p>
               <label id="goal-erase-setup" class="goal-erase-setup" hidden
-                ><input type="checkbox" id="goal-erase" /> Erase words when I
-                stop typing</label
+                ><input type="checkbox" id="goal-erase" /> Let words disappear after a pause (optional)</label
               >
-              <details id="session-settings" class="session-settings">
-                <summary>
-                  <span>Session settings</span
-                  ><span id="settings-summary">10 min · 15 sec pause</span>
-                </summary>
+              <div id="session-settings" class="session-settings">
+                <span id="settings-summary" class="sr-only">10 min · 15 sec pause</span>
                 <div class="settings-fields">
                   <div class="duration-field custom-row" id="custom-row">
-                    <label for="custom-minutes">Write for</label>
+                    <div class="setting-label"><label for="custom-minutes">Write for</label><p id="duration-help">How long the session lasts.</p></div>
                     <input
                       type="number"
                       name="custom-minutes"
@@ -291,11 +358,12 @@
                       value="10"
                       required
                       inputmode="numeric"
+                      aria-describedby="duration-help"
                     />
                     <span>minutes</span>
                   </div>
                   <div class="delay-field">
-                    <label for="grace-value">Delete after</label>
+                    <div class="setting-label"><label for="grace-value">Words start disappearing after</label><p id="delay-help">Without typing. Typing again stops the deletion.</p></div>
                     <div class="delay-controls">
                       <input
                         type="number"
@@ -306,6 +374,7 @@
                         max="600"
                         step="any"
                         required
+                        aria-describedby="delay-help"
                       /><label class="sr-only" for="grace-unit"
                         >Deletion delay unit</label
                       ><select id="grace-unit" name="grace-unit">
@@ -315,7 +384,7 @@
                     </div>
                   </div>
                 </div>
-              </details>
+              </div>
               <p class="grace-note" id="grace-note">
                 Pause for 15 seconds and your last words begin to fade.
               </p>
@@ -429,7 +498,7 @@
                 id="editor"
                 name="writing"
                 placeholder="Start anywhere…"
-                spellcheck="true"
+                spellcheck="false"
                 autocomplete="off"
                 aria-describedby="editor-help"
               ></textarea>
@@ -438,11 +507,15 @@
                 id="dissolve-mirror"
                 aria-hidden="true"
               ></div>
+              <section id="brainstorm-editor" hidden aria-label="Brainstorm questions and answers">
+                <div id="brainstorm-sections"></div>
+                <button type="button" class="text-button" id="add-brainstorm-question">Add question</button>
+              </section>
             </div>
             <p class="sr-only" id="editor-help">
               Write normally. The timer begins with your first word. Inactivity
               deletes the last word after your chosen pause. Command or Control
-              Shift Enter finishes the session: Journal keeps your words; Rant
+              Shift Enter finishes the session: Journal keeps your words; Let it go
               erases them.
             </p>
             <p id="goal-progress" class="goal-progress" hidden aria-live="off">
@@ -476,6 +549,7 @@
                 </button>
               </div>
               <div class="export-buttons">
+                <button type="button" class="text-button" id="continue-saved-note" hidden>Continue session</button>
                 <button type="button" class="text-button" id="edit-note-button">
                   Edit note
                 </button>
@@ -485,6 +559,9 @@
                   id="completed-notes-button"
                 >
                   Notes
+                </button>
+                <button type="button" class="text-button completion-delete" id="completion-delete-note">
+                  Delete note
                 </button>
                 <button type="button" class="text-button" id="copy-button">
                   Copy text</button
@@ -509,6 +586,16 @@
       </footer>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <dialog id="delete-note-dialog" aria-labelledby="delete-note-title" aria-describedby="delete-note-description delete-note-name">
+      <h2 id="delete-note-title">Delete <em>this note?</em></h2>
+      <p id="delete-note-name" class="delete-note-name"></p>
+      <p id="delete-note-description">This permanently removes this note and all its recovery snapshots from this browser, including an open copy of this note in another tab. It cannot be undone. Separately saved copies and downloaded files are not removed.</p>
+      <p id="delete-note-error" role="alert" hidden></p>
+      <div class="welcome-actions">
+        <button type="button" class="text-button" id="cancel-delete-note">Cancel</button>
+        <button type="button" class="primary" id="confirm-delete-note">Delete note</button>
+      </div>
+    </dialog>
     <dialog id="notes-dialog" aria-labelledby="notes-title">
       <div class="dialog-top">
         <p class="eyebrow">Saved only in this browser.</p>
@@ -523,7 +610,7 @@
       </div>
       <h2 id="notes-title">Your <em>notes.</em></h2>
       <p>
-        No account or cloud sync. Download important writing. Rant is never
+        No account or cloud sync. Download important writing. Let it go is never
         saved.
       </p>
       <label class="sr-only" for="notes-search">Search notes</label>
@@ -565,17 +652,28 @@
           Close ×
         </button>
       </div>
+      <button type="button" class="inline-link" id="replay-welcome">Replay introduction</button>
       <h2 id="about-title">Let the next word <em>come.</em></h2>
       <p>
-        Choose your time. Begin with a thought, not a plan. The clock starts
-        with your first word.
+        Write without overthinking. Pause, and your last words begin to
+        disappear. Type again to stop them. Choose a mode that fits what you
+        want to keep; the clock starts with your first word.
       </p>
       <p>
-        In Journal and Rant, set two independent timers:
+        In Journal and Let it go, set two independent timers:
         <strong>Write for</strong> controls your session length (1–240 minutes).
         <strong>Delete after</strong> controls how long you can stop typing (1
         second–10 minutes). Changing modes never changes your chosen delay. Keep
         typing to stop words disappearing.
+      </p>
+      <h3>Four ways to write.</h3>
+      <p>
+        <strong>Journal</strong> is a timed page saved locally, with recovery
+        snapshots before automatic deletion. <strong>Let it go</strong> is
+        disposable: it saves nothing and offers no recovery. <strong>750
+        Words</strong> is untimed, saved locally, and has erasing off by
+        default. <strong>Brainstorm</strong> is an untimed local page for
+        questions and answers, with no automatic erasing.
       </p>
       <h3>750 Words. A page for yourself.</h3>
       <p>
@@ -585,14 +683,15 @@
         pages.
       </p>
       <p>
-        There is no timer or automatic deletion in 750 Words. Your draft stays
+        There is no timer in 750 Words. Automatic deletion is off by default;
+        you can turn on erasing after a pause. Your draft stays
         in this browser. Reach the goal, then finish or keep writing. You can
         also finish early and keep what you wrote. Words are counted as groups
         separated by spaces or line breaks.
       </p>
-      <h3>Rant. Then let it go.</h3>
+      <h3>Let it go. Then let it go.</h3>
       <p>
-        Rant is disposable. It has no autosave, copy/export action, or recovery
+        Let it go is disposable. It has no autosave, copy/export action, or recovery
         snapshots. Everything remaining is erased when the session ends, you end
         it early, or you leave this page. Its session deadline continues while
         you switch tabs. This is not secure erasure or protection against
@@ -602,7 +701,8 @@
       <p>
         Your writing is not sent to us. We do not receive or store a copy.
         Journal and 750 Words save drafts only in this browser, with no account
-        or cloud sync. Rant saves nothing.
+        or cloud sync. Brainstorm saves locally in this app. Let it go saves
+        nothing.
       </p>
       <h3>A local way back in Journal.</h3>
       <p>
@@ -642,7 +742,7 @@
       <p>Your writing is not sent to us. We do not receive or store a copy.</p>
       <p>
         Journal saves drafts and recovery copies in this browser. 750 Words
-        saves your draft here too. No account. No cloud sync. Rant saves
+        saves your draft here too. No account. No cloud sync. Let it go saves
         nothing.
       </p>
       <p>

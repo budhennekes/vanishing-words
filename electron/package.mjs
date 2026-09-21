@@ -29,7 +29,7 @@ await fs.writeFile(
   JSON.stringify({
     name: "let-it-out",
     productName: "Let It Out",
-    version: "0.2.2",
+    version: "0.2.5",
     main: "electron/main.cjs",
   }),
 );

@@ -777,7 +777,7 @@ function setupChanged() {
   const rant = mode === "rant";
   $("rant-note").hidden = !rant;
   $("recovery-note").hidden = rant || goal;
-  $("begin-button").textContent = { journal: "Start journal", rant: "Start Let it go", words750: "Start 750 Words", brainstorm: "Start brainstorm" }[mode];
+  $("begin-button").innerHTML = 'Begin writing <span aria-hidden="true">↗</span>';
   $("privacy-label").textContent = rant
     ? "Let it go is never saved."
     : "Saved only in this browser.";

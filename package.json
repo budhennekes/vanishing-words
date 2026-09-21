@@ -1,7 +1,7 @@
 {
   "name": "let-it-out",
   "productName": "Let It Out",
-  "version": "0.2.2",
+  "version": "0.2.5",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
