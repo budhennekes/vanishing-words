@@ -57,6 +57,20 @@ function createWindow() {
   window.on("closed", () => {
     window = null;
   });
+  // macOS can intercept Escape in page fullscreen before it reaches the renderer.
+  // Handle it at the webContents level so document.exitFullscreen() fires reliably.
+  // event.preventDefault() must be called synchronously, so we call it for every
+  // Escape while page fullscreen is active, then exitFullscreen via JS.
+  window.webContents.on("before-input-event", (event, input) => {
+    if (input.type !== "keyDown" || input.key !== "Escape" || input.isAutoRepeat) return;
+    // Synchronously prevent default so Electron doesn't swallow the key.
+    // Then check page fullscreen state and exit if needed.
+    window.webContents
+      .executeJavaScript(
+        "(function(){var el=document.fullscreenElement||document.webkitFullscreenElement;if(!el)return false;var exit=document.exitFullscreen||document.webkitExitFullscreen;if(exit)exit.call(document);return true;})()",
+      )
+      .catch(() => {});
+  });
   window.loadURL("rtwrite://app/index.html");
 }
 if (!app.requestSingleInstanceLock()) app.quit();

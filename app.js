@@ -13,12 +13,168 @@ const mirror = $("dissolve-mirror");
 const PREFIX = "vanishing-words:v2:session:";
 const now = () => Date.now();
 const makeId = () => crypto.randomUUID();
+const BRAINSTORM_PLACEHOLDER = "What am I trying to figure out?";
+function normalizedBrainstorm(note = state) {
+  const sections = note?.brainstorm;
+  if (!Array.isArray(sections) || !sections.length)
+    return [{ id: makeId(), question: "", answer: "" }];
+  return sections.map((section) => ({
+    id: typeof section?.id === "string" ? section.id : makeId(),
+    question: typeof section?.question === "string" ? section.question : "",
+    answer: typeof section?.answer === "string" ? section.answer : "",
+  }));
+}
+function brainstormText(note = state) {
+  return normalizedBrainstorm(note)
+    .map(({ question, answer }) => `${question}\n${answer}`.trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+function renderBrainstorm() {
+  const active = state?.mode === "brainstorm";
+  $("brainstorm-editor").hidden = !active;
+  editor.hidden = active;
+  mirror.hidden = active;
+  if (!active) return;
+  const sections = normalizedBrainstorm();
+  if (state) state.brainstorm = sections;
+  const host = $("brainstorm-sections");
+  $("add-brainstorm-question").hidden = state.status === "completed" || state.status === "suspended";
+  host.replaceChildren();
+  sections.forEach((section, index) => {
+    const group = document.createElement("section");
+    group.className = "brainstorm-section";
+    const question = document.createElement("input");
+    question.type = "text";
+    question.className = "brainstorm-question";
+    question.value = section.question;
+    question.placeholder = BRAINSTORM_PLACEHOLDER;
+    question.setAttribute("aria-label", `Question ${index + 1}`);
+    const answer = document.createElement("textarea");
+    answer.className = "brainstorm-answer";
+    answer.value = section.answer;
+    answer.placeholder = "Start with the unfinished thought.";
+    answer.spellcheck = false;
+    answer.readOnly = state.status === "completed" || state.status === "suspended";
+    question.readOnly = answer.readOnly;
+    answer.setAttribute("aria-label", `Answer ${index + 1}`);
+    const save = () => {
+      if (!state || state.mode !== "brainstorm") return;
+      state.brainstorm[index] = { id: section.id, question: question.value, answer: answer.value };
+      state = { ...state, text: brainstormText(state), updatedAt: now() };
+      scheduleSave();
+    };
+    question.addEventListener("input", save);
+    answer.addEventListener("input", save);
+    group.append(question, answer);
+    host.append(group);
+  });
+}
+// Irrevocable, content-free per-note markers prevent stale tabs from reviving
+// a deletion. Never compact these while a stale tab could still hold the ID.
+const DELETED_PREFIX = "vanishing-words:v2:deleted:";
+function isDeleted(id) { return localStorage.getItem(DELETED_PREFIX + id) !== null; }
+function forgetDeletedNote(id) {
+  if (state?.id === id) {
+    clearTimeout(saveTimer);
+    state = null;
+    selectedSnapshot = null;
+    diskVersion = null;
+    lastSaved = "";
+    resumeAfterNotes = false;
+    claimNote();
+    editor.value = "";
+    editor.defaultValue = "";
+    $("snapshot-preview").value = "";
+    $("snapshot-choice").replaceChildren();
+    $("recovery-dialog").close();
+    stopDissolve();
+    render();
+  }
+  if (lastHomeNote?.id === id) lastHomeNote = null;
+}
+function guardDeletedNote() {
+  if (!state || state.mode === "rant") return false;
+  try {
+    if (!isDeleted(state.id)) return false;
+    forgetDeletedNote(state.id);
+    loadDraft();
+    notify("This note was deleted. Its writing and recovery are no longer available.");
+    return true;
+  } catch {
+    storageWarning("Cannot check this note’s deletion status. Saving is paused. Keep this page open and try again.");
+    return true;
+  }
+}
+let pendingDelete = null;
+function requestDelete(note, trigger) {
+  pendingDelete = { id: note.id, trigger };
+  $("delete-note-name").textContent = note.text.trim().split("\n")[0].slice(0, 100) || "Recovered writing";
+  $("delete-note-error").hidden = true;
+  $("confirm-delete-note").textContent = "Delete note";
+  $("cancel-delete-note").textContent = "Cancel";
+  $("delete-note-dialog").showModal();
+  $("cancel-delete-note").focus();
+}
+$("cancel-delete-note").addEventListener("click", () => $("delete-note-dialog").close());
+$("delete-note-dialog").addEventListener("close", () => {
+  pendingDelete?.trigger?.focus();
+  pendingDelete = null;
+});
+$("delete-note-dialog").addEventListener("keydown", event => {
+  if (event.key !== "Tab") return;
+  const first = $("cancel-delete-note"), last = $("confirm-delete-note");
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
+$("confirm-delete-note").addEventListener("click", () => {
+  if (!pendingDelete) return;
+  const id = pendingDelete.id;
+  let marked = false;
+  try {
+    // Commit the barrier BEFORE removing the record. A failed cleanup can be
+    // retried, but must never roll back a barrier another tab has already seen.
+    localStorage.setItem(DELETED_PREFIX + id, "1");
+    if (!isDeleted(id)) throw new Error("Deletion marker was not saved");
+    marked = true;
+    forgetDeletedNote(id);
+    localStorage.removeItem(PREFIX + id);
+    if (localStorage.getItem(PREFIX + id) !== null) throw new Error("Note remains");
+    pendingDelete = null;
+    $("delete-note-dialog").close();
+    loadDraft();
+    openNotes();
+    $("notes-search").focus();
+    notify("Note deleted, including its recovery snapshots.");
+  } catch {
+    $("delete-note-error").textContent = marked
+      ? "Deletion is blocked from reopening, but stored text could not be removed. Retry deletion to finish removing this note and its recovery copies."
+      : "This note could not be deleted. Nothing was removed. Try again when local storage is available.";
+    $("delete-note-error").hidden = false;
+    $("cancel-delete-note").textContent = marked ? "Close" : "Cancel";
+    $("confirm-delete-note").textContent = "Retry deletion";
+  }
+});
+window.addEventListener("storage", event => {
+  if (!event.key?.startsWith(DELETED_PREFIX) && !event.key?.startsWith(PREFIX)) return;
+  const id = event.key.slice(event.key.startsWith(DELETED_PREFIX) ? DELETED_PREFIX.length : PREFIX.length);
+  try {
+    if (isDeleted(id)) {
+      forgetDeletedNote(id);
+      // Also cleans up an in-flight write that raced the durable barrier.
+      localStorage.removeItem(PREFIX + id);
+      loadDraft();
+      if ($("notes-dialog").open && !$("delete-note-dialog").open) openNotes();
+    }
+  } catch { storageWarning("A deleted note could not be removed from local storage. Reopen Notes and retry deletion."); }
+});
 let diskVersion = null;
 let afterRantLeave = null;
 let resumeAfterNotes = false;
 let releaseNoteLock = null;
 let lockedNoteId = null;
 function claimNote() {
+  if (guardDeletedNote()) return;
   releaseNoteLock?.();
   releaseNoteLock = null;
   lockedNoteId = null;
@@ -36,7 +192,7 @@ function claimNote() {
   }
   navigator.locks
     .request(`writing-note:${id}`, { ifAvailable: true }, async (lock) => {
-      if (state?.id !== id) return;
+      if (state?.id !== id || guardDeletedNote()) return;
       if (!lock) {
         state = { ...state, id: makeId() };
         diskVersion = null;
@@ -69,24 +225,34 @@ let lastSaved = "";
 let lastTickAt = now();
 let storageFailed = false;
 let lastView = "landing";
+// Tracks whether the writing nav is currently revealed (top-edge pointer or keyboard focus).
+let navRevealed = false;
 let goalAnnounced = false;
 const APPEARANCE_KEY = "vanishing-words:v2:appearance";
 const TONES = ["paper", "sand", "sage", "mist"];
+const WASHES = ["plain", "linen", "sea-glass", "blue-hour", "apricot-haze", "dusk", "after-hours", "matrix"];
+const INKS = ["default", "green", "amber"];
 const COLOR_MODES = ["light", "dark", "system"];
 const systemColorScheme = matchMedia("(prefers-color-scheme: dark)");
 let appearance = {
   tone: "paper",
+  wash: "plain",
+  ink: "default",
   colorMode: "system",
   progress: false,
   timer: true,
-  wordCount: { journal: false, rant: false, words750: true },
+  spellcheck: false,
+  wordCount: { journal: false, rant: false, words750: true, brainstorm: false },
 };
 try {
   const saved = JSON.parse(localStorage.getItem(APPEARANCE_KEY));
   if (saved && TONES.includes(saved.tone)) appearance.tone = saved.tone;
+  if (WASHES.includes(saved?.wash)) appearance.wash = saved.wash;
+  if (INKS.includes(saved?.ink)) appearance.ink = saved.ink;
   if (COLOR_MODES.includes(saved?.colorMode))
     appearance.colorMode = saved.colorMode;
   if (typeof saved?.timer === "boolean") appearance.timer = saved.timer;
+  if (typeof saved?.spellcheck === "boolean") appearance.spellcheck = saved.spellcheck;
   if (typeof saved?.progress === "boolean")
     appearance.progress = saved.progress;
   for (const mode of Object.keys(appearance.wordCount)) {
@@ -98,7 +264,7 @@ try {
 }
 function applyAppearance(save = false) {
   document.documentElement.dataset.theme =
-    appearance.colorMode === "system"
+    appearance.wash !== "plain" ? appearance.wash === "after-hours" ? "dark" : "light" : appearance.colorMode === "system"
       ? systemColorScheme.matches
         ? "dark"
         : "light"
@@ -107,9 +273,18 @@ function applyAppearance(save = false) {
     `[name="color-mode"][value="${appearance.colorMode}"]`,
   ).checked = true;
   document.documentElement.dataset.paperTone = appearance.tone;
+  document.documentElement.dataset.pageWash = appearance.wash;
+  document.documentElement.dataset.writingInk =
+    appearance.wash === "matrix" && appearance.ink === "default"
+      ? "green"
+      : appearance.ink;
+  $("page-wash").value = appearance.wash;
+  document.querySelector(`[name="writing-ink"][value="${appearance.ink}"]`).checked = true;
   document.querySelector(
     `[name="paper-tone"][value="${appearance.tone}"]`,
   ).checked = true;
+  editor.spellcheck = appearance.spellcheck;
+  $("check-spelling").checked = appearance.spellcheck;
   $("show-progress").checked = appearance.progress;
   $("show-session-timer").checked = appearance.timer;
   document.querySelector('meta[name="theme-color"]').content = getComputedStyle(
@@ -192,11 +367,13 @@ function storageWarning(message) {
 }
 function flushSave() {
   clearTimeout(saveTimer);
+  if (guardDeletedNote()) return false;
   if (!state || state.mode === "rant" || state.reviewing) return true;
   if (lockedNoteId !== state.id) return false;
   // No visual pending state is persisted. Save clocks at this instant, not the last keystroke.
   try {
     const existing = localStorage.getItem(PREFIX + state.id);
+    if (guardDeletedNote()) return false;
     if (diskVersion !== null && existing !== diskVersion) {
       state = { ...state, id: makeId() };
       diskVersion = null;
@@ -219,6 +396,11 @@ function flushSave() {
   if (serialized === lastSaved) return true;
   try {
     localStorage.setItem(PREFIX + state.id, serialized);
+    if (isDeleted(state.id)) {
+      localStorage.removeItem(PREFIX + state.id);
+      guardDeletedNote();
+      return false;
+    }
     lastSaved = serialized;
     diskVersion = serialized;
     if (storageFailed) {
@@ -298,6 +480,10 @@ function renderClock() {
       "Editing a saved note. No timer or automatic deletion.";
     return;
   }
+  if (state.mode === "brainstorm") {
+    $("idle-status").textContent = "No timer. Questions and answers stay in this app.";
+    return;
+  }
   if (state.mode === "words750") {
     $("idle-status").textContent =
       state.eraseOnPause && !state.editing
@@ -346,25 +532,33 @@ function render() {
   $("suspended").hidden = !suspended;
   const focused = Boolean(state) && !completed && !suspended;
   const goal = state?.mode === "words750";
+  const brainstorm = state?.mode === "brainstorm";
+  const untimed = goal || brainstorm;
   const showCount = Boolean(state && appearance.wordCount[state.mode]);
   $("show-word-count").checked = showCount;
   $("goal-progress").hidden = !focused || !showCount;
-  $("session-clock").hidden = goal || Boolean(state?.editing);
+  $("session-clock").hidden = untimed || Boolean(state?.editing);
   document.querySelector(".progress-choice").hidden =
-    goal || Boolean(state?.editing);
+    untimed || Boolean(state?.editing);
   $("writing-bottom").hidden =
-    !focused || !appearance.progress || goal || Boolean(state?.editing);
+    !focused || !appearance.progress || untimed || Boolean(state?.editing);
   $("controls-toggle").hidden = !focused;
-  $("page-navigation").hidden = !state;
+  // During writing, hide the nav until a deliberate top-edge pointer or keyboard focus reveals it.
+  $("page-navigation").hidden = focused ? !navRevealed : !state;
+  if (!focused) navRevealed = false;
   $("page-timer").hidden =
-    !focused || goal || Boolean(state?.editing) || !appearance.timer;
+    !focused || untimed || Boolean(state?.editing) || !appearance.timer;
+  $("editing-status").hidden = !focused || !state?.editing;
+  $("continue-saved-note").hidden = !state?.reviewing || state.status === "completed";
   $("let-go-button").hidden = !focused || state?.mode !== "rant";
+  $("completion-delete-note").hidden = !completed || state?.mode === "rant";
   if (!focused) setControls(false);
   document.body.classList.toggle("focus-view", focused);
   document.body.classList.toggle("session-view", Boolean(state));
   document.body.classList.toggle("completed", completed);
   document.body.classList.toggle("is-rant", state?.mode === "rant");
   document.body.classList.toggle("is-suspended", suspended);
+  document.body.dataset.arrivalMode = state?.mode || document.querySelector('input[name="mode"]:checked')?.value || "journal";
   if (!state) {
     $("editor-wrap").hidden = false;
     document.querySelector(".page-label").hidden = false;
@@ -374,7 +568,7 @@ function render() {
   }
   const rant = state.mode === "rant";
   $("edit-note-button").hidden = rant;
-  $("new-note-mode").value = state.mode;
+  $("nav-mode").textContent = MODES[state.mode].label;
   $("goal-erase-choice").hidden = !goal || Boolean(state.editing);
   $("goal-erase-help").hidden = !goal || Boolean(state.editing);
   $("session-goal-erase").checked = Boolean(state.eraseOnPause);
@@ -382,21 +576,25 @@ function render() {
     `Off by default. When on, words erase after ${state.grace / 1000} seconds without typing. Recovery snapshots stay in this browser.`;
   $("privacy-label").textContent = rant
     ? completed
-      ? "Nothing saved. Your rant is gone."
+      ? "Nothing saved. Your Let it go session is gone."
       : "Not saved. Erased when this session ends."
     : "Saved only in this browser.";
   $("finish-button").innerHTML = rant
     ? 'Let go <span aria-hidden="true">↑</span>'
     : 'Finish <span aria-hidden="true">↗</span>';
   $("finish-button").title = rant
-    ? "End this rant and erase its text"
+    ? "End this Let it go session and erase its text"
     : "Finish and keep your writing";
   $("editor-help").textContent = rant
-    ? "Disposable rant. Nothing is saved. Inactivity removes words after your chosen delay. Ending the session or leaving erases everything. Command or Control Shift Enter ends and erases."
+    ? "Disposable Let it go session. Nothing is saved. Inactivity removes words after your chosen delay. Ending the session or leaving erases everything. Command or Control Shift Enter ends and erases."
     : "The session starts with your first word. Inactivity removes words after your chosen delay. Command or Control Shift Enter finishes and keeps your words.";
   if (goal)
     $("editor-help").textContent =
       `Write toward 750 words. No timer. ${state.eraseOnPause && !state.editing ? "Words erase after a pause; recovery snapshots are saved locally." : "No automatic deletion."} Your draft is saved in this browser. Keep writing past the goal or finish at any time.`;
+  if (brainstorm)
+    $("editor-help").textContent =
+      "Ask a question, then write below it. Add another question when it helps. Questions and answers are saved only in this app, with no timer or automatic deletion.";
+  if (state.editing) $("editor-help").textContent = "Editing a saved note. No timer or automatic deletion. Finish to keep your edits.";
   editor.placeholder = {
     words750: "Start with whatever is on your mind…",
     journal: "What’s on your mind?",
@@ -416,10 +614,11 @@ function render() {
   ])
     $(id).hidden = rant;
   $("completion-title").innerHTML = rant
-    ? "Rant <em>erased.</em>"
+    ? "Let it go <em>erased.</em>"
     : "Session <em>finished.</em>";
   $("mode-label").textContent = MODES[state.mode].label;
   editor.readOnly = completed || suspended;
+  renderBrainstorm();
   const text = completed ? displayText() : state.text;
   syncEditor(text);
   const words = countWords(text);
@@ -463,17 +662,17 @@ function render() {
         ? "Word goal reached."
         : "Session finished.";
       $("completion-copy").textContent = reached
-        ? "You reached your goal. Your words are yours to keep."
+        ? "That was a blank page a little while ago. Your words are yours to keep."
         : `${words} of ${WORD_GOAL} words. Your page is yours to keep, even when you finish early.`;
     }
     if (rant) {
       $("completion-eyebrow").textContent = "Out of your head. Off the page.";
       $("completion-title").innerHTML =
-        state.reason === "early" ? "Let <em>go.</em>" : "Rant <em>erased.</em>";
+        state.reason === "early" ? "Let <em>go.</em>" : "Let it go <em>erased.</em>";
       $("completion-copy").textContent =
         state.reason === "early"
           ? "Nothing saved. Nothing to come back to."
-          : "Your rant has been erased. Nothing was saved. There is no recovery.";
+          : "Your Let it go session has been erased. Nothing was saved. There is no recovery.";
     }
     $("export-source").textContent =
       selectedSnapshot === null
@@ -493,11 +692,11 @@ function render() {
     $("completion-eyebrow").textContent = "Saved note.";
     $("completion-title").innerHTML = "Your <em>words.</em>";
     $("completion-copy").textContent =
-      "Read it here, or choose Edit note. No timer or automatic deletion while editing.";
+      state.status === "completed"
+        ? "Read it here, or choose Edit note. No timer or automatic deletion while editing."
+        : `Read it here. Continue session ${state.editing || ["words750", "brainstorm"].includes(state.mode) ? "without a timer" : `with ${formatTime(state.remaining)} remaining`}, or Edit note without a timer or automatic deletion.`;
   }
-  $("new-button").innerHTML = rant
-    ? 'Start another rant <span aria-hidden="true">↗</span>'
-    : 'New note <span aria-hidden="true">↗</span>';
+  $("new-button").textContent = "New entry";
   renderClock();
   if (view !== lastView) {
     if (completed) $("completion-title").focus({ preventScroll: true });
@@ -507,7 +706,7 @@ function render() {
   lastView = view;
 }
 function dispatch(event, time = now()) {
-  if (!state) return;
+  if (!state || guardDeletedNote()) return;
   const before = state;
   const next = transition(state, event, time);
   if (next === before) {
@@ -542,6 +741,7 @@ function dispatch(event, time = now()) {
 }
 function setupChanged() {
   const mode = document.querySelector('input[name="mode"]:checked').value;
+  document.body.dataset.arrivalMode = mode;
   const minutes = Number($("custom-minutes").value);
   const unit = $("grace-unit").value;
   const value = Number($("grace-value").value);
@@ -549,21 +749,27 @@ function setupChanged() {
   $("grace-value").max = unit === "seconds" ? "600" : "10";
   const note = $("grace-note");
   const goal = mode === "words750";
+  const brainstorm = mode === "brainstorm";
+  const untimed = goal || brainstorm;
   const erasing = goal && $("goal-erase").checked;
   $("goal-erase-setup").hidden = !goal;
-  $("session-settings").hidden = goal && !erasing;
-  $("custom-row").hidden = goal;
-  $("custom-minutes").disabled = goal;
+  $("session-settings").hidden = untimed && !erasing;
+  $("custom-row").hidden = untimed;
+  $("custom-minutes").disabled = untimed;
   for (const id of ["grace-value", "grace-unit"])
-    $(id).disabled = goal && !erasing;
-  note.textContent = goal
+    $(id).disabled = untimed && !erasing;
+  note.textContent = brainstorm
+    ? "No session timer. Questions and answers are kept in this app."
+    : goal
     ? erasing
-      ? `No timer. After ${value} ${unit} without typing, words begin to erase. Recovery stays in this browser.`
-      : "No timer. No disappearing words. Saved in this browser."
+      ? `No session timer. After ${value} ${unit} without typing, words begin to erase. Recovery stays in this browser.`
+      : "No session timer. No disappearing words. Saved in this browser."
     : `Pause for ${value} ${unit} and your last words begin to fade.`;
   $("settings-summary").textContent =
-    `${goal ? "No timer" : `${minutes} min`} · ${value} ${unit === "seconds" ? "sec" : "min"} pause`;
-  $("mode-description").textContent = goal
+    `${untimed ? "No timer" : `${minutes} min`} · ${value} ${unit === "seconds" ? "sec" : "min"} pause`;
+  $("mode-description").textContent = brainstorm
+    ? "A few questions. Your own answers."
+    : goal
     ? "750 words for yourself. Inspired by The Artist’s Way."
     : mode === "rant"
       ? "Write it out. Leave no saved copy."
@@ -571,18 +777,19 @@ function setupChanged() {
   const rant = mode === "rant";
   $("rant-note").hidden = !rant;
   $("recovery-note").hidden = rant || goal;
-  $("begin-button").innerHTML = rant
-    ? 'Start rant <span aria-hidden="true">↗</span>'
-    : 'New note <span aria-hidden="true">↗</span>';
+  $("begin-button").textContent = { journal: "Start journal", rant: "Start Let it go", words750: "Start 750 Words", brainstorm: "Start brainstorm" }[mode];
   $("privacy-label").textContent = rant
-    ? "Rant is never saved."
+    ? "Let it go is never saved."
     : "Saved only in this browser.";
 }
 function begin(event) {
   event?.preventDefault();
+  if (!$("welcome").hidden) { chooseWritingMode(); return; }
   if (state || !$("setup-form").reportValidity()) return;
+  rememberWelcome();
+  showWelcome(false);
   const mode = document.querySelector('input[name="mode"]:checked').value;
-  const minutes = mode === "words750" ? 10 : Number($("custom-minutes").value);
+  const minutes = ["words750", "brainstorm"].includes(mode) ? 10 : Number($("custom-minutes").value);
   try {
     const graceMs =
       mode === "words750" && !$("goal-erase").checked
@@ -601,6 +808,9 @@ function begin(event) {
       },
       now(),
     );
+    if (mode === "brainstorm") {
+      state = { ...state, brainstorm: [{ id: makeId(), question: "", answer: "" }] };
+    }
     diskVersion = null;
     claimNote();
   } catch (error) {
@@ -613,7 +823,8 @@ function begin(event) {
   render();
   flushSave();
   window.scrollTo({ top: 0, behavior: "instant" });
-  editor.focus({ preventScroll: true });
+  if (mode === "brainstorm") $("brainstorm-sections").querySelector("input")?.focus({ preventScroll: true });
+  else editor.focus({ preventScroll: true });
 }
 function finish() {
   if (!state || state.status === "completed" || state.reviewing) return;
@@ -679,7 +890,7 @@ function suspend(reason) {
   else flushSave();
 }
 function download(extension) {
-  if (!state || state.mode === "rant") return;
+  if (!state || state.mode === "rant" || guardDeletedNote()) return;
   const content = displayText();
   const url = URL.createObjectURL(
     new Blob([content], {
@@ -705,6 +916,7 @@ function download(extension) {
   notify(`Download requested for ${source} text. Check your downloads.`);
 }
 function openRecovery() {
+  if (guardDeletedNote()) return;
   if (!state?.snapshots.length || state.mode === "rant") return;
   const select = $("snapshot-choice");
   select.replaceChildren();
@@ -735,6 +947,7 @@ function loadDraft() {
       try {
         const raw = JSON.parse(localStorage.getItem(key));
         const restored = restoreSession(raw, now());
+        if (isDeleted(key.slice(PREFIX.length))) continue;
         if (!restored) {
           invalid = true;
           continue;
@@ -774,7 +987,7 @@ function loadDraft() {
         const entry = [...$("notes-list").children].find(
           (el) => el.dataset.noteId === note.id,
         );
-        entry?.click();
+        entry?.querySelector(".saved-note")?.click();
       });
       recentList.append(button);
     }
@@ -790,10 +1003,11 @@ function loadDraft() {
   }
 }
 
-$("continue-note-button").addEventListener("click", () => {
-  if (!lastHomeNote || state) return;
+function continueSavedNote(id) {
+  if (state && !state.reviewing) return;
   try {
-    const stored = localStorage.getItem(PREFIX + lastHomeNote.id);
+    if (isDeleted(id)) { guardDeletedNote(); loadDraft(); return; }
+    const stored = localStorage.getItem(PREFIX + id);
     const restored = restoreSession(JSON.parse(stored), now());
     if (!restored) {
       notify("This note is unavailable. Browse Notes for your saved pages.");
@@ -812,6 +1026,9 @@ $("continue-note-button").addEventListener("click", () => {
       "This note could not be read. Your saved data has not been removed.",
     );
   }
+}
+$("continue-note-button").addEventListener("click", () => {
+  if (lastHomeNote && !state) continueSavedNote(lastHomeNote.id);
 });
 $("setup-form").addEventListener("submit", begin);
 $("setup-form").addEventListener(
@@ -862,10 +1079,16 @@ document.addEventListener("pointerdown", (event) => {
     setControls(false);
 });
 document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || event.isComposing) return;
+  // Electron does not auto-exit page fullscreen on Escape; exit it explicitly here.
+  // This preserves app-level (OS window) fullscreen, which Electron manages separately.
+  if (fullscreenElement()) {
+    event.preventDefault();
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    exit?.call(document).catch(() => {});
+    return;
+  }
   if (
-    event.key !== "Escape" ||
-    fullscreenElement() ||
-    event.isComposing ||
     document.querySelector("dialog[open]") ||
     !state ||
     !["ready", "active"].includes(state.status)
@@ -877,6 +1100,10 @@ document.addEventListener("keydown", (event) => {
 systemColorScheme.addEventListener("change", () => {
   if (appearance.colorMode === "system") applyAppearance();
 });
+$("check-spelling").addEventListener("change", () => {
+  appearance.spellcheck = $("check-spelling").checked;
+  applyAppearance(true);
+});
 for (const radio of document.querySelectorAll('[name="color-mode"]')) {
   radio.addEventListener("change", () => {
     appearance.colorMode = radio.value;
@@ -886,6 +1113,19 @@ for (const radio of document.querySelectorAll('[name="color-mode"]')) {
 for (const radio of document.querySelectorAll('[name="paper-tone"]')) {
   radio.addEventListener("change", () => {
     appearance.tone = radio.value;
+    appearance.wash = "plain";
+    applyAppearance(true);
+  });
+}
+$("page-wash").addEventListener("change", () => {
+  if (!WASHES.includes($("page-wash").value)) return;
+  appearance.wash = $("page-wash").value;
+  if (appearance.wash === "matrix") appearance.ink = "green";
+  applyAppearance(true);
+});
+for (const radio of document.querySelectorAll('[name="writing-ink"]')) {
+  radio.addEventListener("change", () => {
+    appearance.ink = radio.value;
     applyAppearance(true);
   });
 }
@@ -905,7 +1145,7 @@ for (const eventName of ["copy", "cut"])
     if (state?.mode === "rant") {
       event.preventDefault();
       notify(
-        "Rant is disposable. Choose Journal or 750 Words when you want to keep your words.",
+        "Let it go is disposable. Choose Journal or 750 Words when you want to keep your words.",
       );
     }
   });
@@ -931,7 +1171,7 @@ $("resume-button").addEventListener("click", () => {
   editor.focus({ preventScroll: true });
 });
 $("copy-button").addEventListener("click", async () => {
-  if (!state || state.mode === "rant") return;
+  if (!state || state.mode === "rant" || guardDeletedNote()) return;
   try {
     await navigator.clipboard.writeText(displayText());
     notify("Copied. Take your words somewhere good.");
@@ -975,34 +1215,31 @@ function leaveSafely(action) {
   }
   action();
 }
-function newNote(mode = state?.mode || "journal") {
-  const previous = state;
-  leaveSafely(() => {
-    state = createSession(
-      {
-        id: makeId(),
-        mode,
-        minutes: previous ? previous.duration / 60000 : 10,
-        graceMs: previous?.grace || 15000,
-        eraseOnPause: mode === "words750" && Boolean(previous?.eraseOnPause),
-      },
-      now(),
-    );
-    diskVersion = null;
-    lastSaved = "";
-    selectedSnapshot = null;
-    goalAnnounced = false;
-    claimNote();
-    stopDissolve();
-    setControls(false);
-    render();
-    flushSave();
-    window.scrollTo({ top: 0, behavior: "instant" });
-    editor.focus({ preventScroll: true });
-  });
+// Every new-entry path uses the same Home form, never a hidden default.
+function newNote() {
+  goHome();
+}
+function focusModeChoice() {
+  document.querySelector('input[name="mode"]:checked').focus({ preventScroll: true });
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+function chooseWritingMode() {
+  rememberWelcome();
+  showWelcome(false);
+  setupChanged();
+  focusModeChoice();
 }
 function goHome() {
   leaveSafely(() => {
+    // Reflect the current session without resetting the shared setup choices.
+    if (state) {
+      const choice = document.querySelector(`[name="mode"][value="${state.mode}"]`);
+      if (choice) choice.checked = true;
+      if (state.mode !== "words750") $("custom-minutes").value = String(state.duration / 60000);
+      if (state.mode !== "words750" || state.eraseOnPause)
+        $("grace-value").value = String(state.grace / ($("grace-unit").value === "minutes" ? 60000 : 1000));
+      if (state.mode === "words750") $("goal-erase").checked = Boolean(state.eraseOnPause);
+    }
     state = null;
     selectedSnapshot = null;
     diskVersion = null;
@@ -1012,7 +1249,8 @@ function goHome() {
     render();
     $("landing-notes-button").hidden = false;
     loadDraft();
-    $("begin-button").focus({ preventScroll: true });
+    showWelcome(false);
+    focusModeChoice();
   });
 }
 function openNotes() {
@@ -1054,6 +1292,10 @@ function openNotes() {
   }
   records.sort((a, b) => b.updatedAt - a.updatedAt);
   for (const note of records) {
+    const row = document.createElement("div");
+    row.className = "saved-note-row";
+    row.dataset.noteId = note.id;
+    row.searchText = `${note.text} ${MODES[note.mode].label}`.toLowerCase();
     const button = document.createElement("button");
     button.type = "button";
     button.className = "saved-note";
@@ -1063,6 +1305,7 @@ function openNotes() {
     ).slice(0, 100);
     const meta = document.createElement("span");
     meta.textContent = `${MODES[note.mode].label} · ${countWords(note.text)} words · ${new Date(note.updatedAt).toLocaleDateString()}${state?.id === note.id ? " · Current" : ""}`;
+    if (note.status !== "completed") meta.textContent += note.editing || ["words750", "brainstorm"].includes(note.mode) ? " · Unfinished · No timer" : ` · Unfinished · ${formatTime(restoreSession(note, now()).remaining)} left`;
     button.dataset.noteId = note.id;
     button.append(title, meta);
     button.searchText = `${note.text} ${MODES[note.mode].label}`.toLowerCase();
@@ -1072,6 +1315,7 @@ function openNotes() {
       leaveSafely(() => {
         let stored, restored;
         try {
+          if (isDeleted(note.id)) { guardDeletedNote(); loadDraft(); notify("This note was deleted."); return; }
           stored = localStorage.getItem(PREFIX + note.id);
           restored = restoreSession(JSON.parse(stored), now());
         } catch {
@@ -1096,7 +1340,17 @@ function openNotes() {
         editor.focus({ preventScroll: true });
       });
     });
-    list.append(button);
+    const deleted = isDeleted(note.id);
+    button.disabled = deleted;
+    if (deleted) meta.textContent = "Deletion incomplete. Retry to remove stored text.";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "delete-note text-button";
+    remove.textContent = deleted ? "Retry deletion" : "Delete";
+    remove.setAttribute("aria-label", `${deleted ? "Retry deletion of" : "Delete"} ${title.textContent}`);
+    remove.addEventListener("click", () => requestDelete(note, remove));
+    row.append(button, remove);
+    list.append(row);
   }
   $("notes-empty").hidden = records.length > 0;
   $("notes-dialog").showModal();
@@ -1113,6 +1367,10 @@ for (const id of [
   "paused-notes-button",
 ])
   $(id).addEventListener("click", openNotes);
+$("completion-delete-note").addEventListener("click", () => {
+  if (!state || state.mode === "rant" || (!state.reviewing && state.status !== "completed")) return;
+  requestDelete(state, $("completion-delete-note"));
+});
 $("home-button").addEventListener("click", goHome);
 $("nav-home").addEventListener("click", goHome);
 $("nav-notes").addEventListener("click", openNotes);
@@ -1133,10 +1391,14 @@ $("notes-search").addEventListener("input", () => {
 });
 $("new-button").addEventListener("click", () => newNote());
 $("paused-new-button").addEventListener("click", () => newNote());
-$("menu-new-button").addEventListener("click", () =>
-  newNote($("new-note-mode").value),
-);
+$("menu-new-button").addEventListener("click", newNote);
+$("continue-saved-note").addEventListener("click", () => {
+  if (!state?.reviewing || state.status === "completed") return;
+  // Re-read through the Home continuation path, never create a new clock.
+  continueSavedNote(state.id);
+});
 $("edit-note-button").addEventListener("click", () => {
+  if (guardDeletedNote()) return;
   selectedSnapshot = null;
   if (state?.reviewing) {
     state = { ...state, reviewing: false, status: "completed" };
@@ -1156,6 +1418,13 @@ $("session-goal-erase").addEventListener("change", () => {
   stopDissolve();
   render();
   flushSave();
+});
+$("add-brainstorm-question").addEventListener("click", () => {
+  if (state?.mode !== "brainstorm" || state.status === "completed") return;
+  state = { ...state, brainstorm: [...normalizedBrainstorm(), { id: makeId(), question: "", answer: "" }] };
+  render();
+  flushSave();
+  [...$("brainstorm-sections").querySelectorAll("input")].at(-1)?.focus();
 });
 $("cancel-rant-leave").addEventListener("click", () => {
   afterRantLeave = null;
@@ -1188,11 +1457,13 @@ document.addEventListener("keydown", (event) => {
   }
 });
 document.addEventListener("visibilitychange", () => {
+  if (document.hidden) stopDemo();
   if (document.hidden) suspend("hidden");
   else if (state?.mode === "rant") dispatch({ type: "tick" });
   lastTickAt = now();
 });
 function leavePage() {
+  stopDemo();
   document.querySelectorAll(".released-words").forEach((el) => {
     el.textContent = "";
     el.remove();
@@ -1229,7 +1500,127 @@ setInterval(() => {
   else dispatch({ type: "tick" }, time);
   lastTickAt = time;
 }, 100);
+const WELCOME_KEY = "vanishing-words:v2:welcome-seen";
+const WELCOME_VERSION = "2";
+let demo = null;
+let demoTimer = null;
+function stopDemo() {
+  clearInterval(demoTimer);
+  demoTimer = null;
+  demo = null;
+  $("demo-editor").value = "";
+  $("demo-editor").readOnly = true;
+  $("demo-mirror").replaceChildren();
+  $("demo-start").textContent = "Try disappearing words";
+  $("demo-status").textContent = "Try the sample, or go straight to the next step.";
+}
+function renderDemo(previousPending) {
+  const field = $("demo-editor");
+  if (field.value !== demo.text) {
+    const position = field.selectionStart;
+    field.value = demo.text;
+    field.setSelectionRange(Math.min(position, demo.text.length), Math.min(position, demo.text.length));
+  }
+  if (previousPending !== demo.pending) {
+    const layer = $("demo-mirror");
+    layer.replaceChildren();
+    if (demo.pending) {
+      const prefix = document.createTextNode(demo.text.slice(0, demo.pending.index));
+      const cover = document.createElement("span");
+      cover.className = "dissolve-cover";
+      const word = document.createElement("span");
+      word.className = "dissolve-word";
+      word.textContent = demo.pending.text;
+      cover.append(word);
+      layer.append(prefix, cover);
+    }
+  }
+  $("demo-mirror").style.transform = `translateY(${-field.scrollTop}px)`;
+  const status = demo.pending || now() - demo.lastInputAt >= demo.grace
+    ? demo.text.trim() ? "Words are disappearing. Type to stop them." : "The sample is gone. Type again, or restart the preview."
+    : "Typing stops the disappearance. Pause for 3 seconds to see it again.";
+  if ($("demo-status").textContent !== status) $("demo-status").textContent = status;
+}
+function demoEvent(event) {
+  if (!demo) return;
+  const pending = demo.pending;
+  demo = transition(demo, event, now());
+  renderDemo(pending);
+}
+$("demo-start").addEventListener("click", () => {
+  stopDemo();
+  // The real engine, but no persistence adapter and no reference to state.
+  demo = createSession({ id: "onboarding-sample", mode: "rant", minutes: 240, graceMs: 3000 }, now());
+  $("demo-editor").readOnly = false;
+  demoEvent({ type: "input", text: "A thought can lead somewhere I did not expect." });
+  $("demo-start").textContent = "Restart preview";
+  $("demo-editor").focus();
+  $("demo-editor").setSelectionRange(demo.text.length, demo.text.length);
+  demoTimer = setInterval(() => {
+    if (document.hidden || $("welcome").hidden || $("welcome-practice").hidden) { stopDemo(); return; }
+    demoEvent({ type: "tick" });
+  }, 100);
+});
+$("demo-editor").addEventListener("input", () => demoEvent({ type: "input", text: $("demo-editor").value }));
+$("demo-editor").addEventListener("compositionstart", () => demoEvent({ type: "compositionStart" }));
+$("demo-editor").addEventListener("compositionend", () => demoEvent({ type: "compositionEnd" }));
+$("demo-editor").addEventListener("scroll", () => { if (demo) renderDemo(demo.pending); });
+function welcomeStep(retention) {
+  stopDemo();
+  $("welcome-practice").hidden = retention;
+  $("welcome-retention").hidden = !retention;
+  const heading = retention ? "welcome-retention-title" : "welcome-title";
+  $("welcome").setAttribute("aria-labelledby", heading);
+  $("landing").setAttribute("aria-labelledby", heading);
+  $(heading).focus({ preventScroll: true });
+}
+$("welcome-next").addEventListener("click", () => welcomeStep(true));
+$("welcome-back").addEventListener("click", () => welcomeStep(false));
+function rememberWelcome() {
+  try { localStorage.setItem(WELCOME_KEY, WELCOME_VERSION); }
+  catch { /* Unavailable storage must never block the first page. */ }
+}
+function showWelcome(open) {
+  stopDemo();
+  $("welcome").hidden = !open;
+  $("home-copy").hidden = open;
+  $("landing").setAttribute("aria-labelledby", open ? "welcome-title" : "hero-title");
+  if (open) welcomeStep(false);
+}
+$("welcome-skip").addEventListener("click", chooseWritingMode);
+$("welcome-start").addEventListener("click", chooseWritingMode);
+$("replay-welcome").addEventListener("click", () => {
+  $("about-dialog").close();
+  if (!state) showWelcome(true);
+});
 applyAppearance();
 setupChanged();
 render();
 loadDraft();
+// Reveal the writing nav on deliberate top-edge pointer proximity or keyboard focus.
+let navPeekTimer = null;
+function setNavRevealed(value) {
+  if (navRevealed === value) return;
+  navRevealed = value;
+  render();
+}
+document.addEventListener("pointermove", (e) => {
+  if (!document.body.classList.contains("focus-view")) return;
+  const NAV_ZONE = 60;
+  if (e.clientY <= NAV_ZONE) {
+    clearTimeout(navPeekTimer);
+    setNavRevealed(true);
+  } else {
+    clearTimeout(navPeekTimer);
+    navPeekTimer = setTimeout(() => setNavRevealed(false), 800);
+  }
+});
+$("page-navigation").addEventListener("focusin", () => setNavRevealed(true));
+$("page-navigation").addEventListener("focusout", (e) => {
+  if (!$("page-navigation").contains(e.relatedTarget)) setNavRevealed(false);
+});
+try {
+  // This core-behavior introduction is shown once on upgrade as well.
+  // Only the separate welcome marker changes, never existing writing.
+  if (localStorage.getItem(WELCOME_KEY) !== WELCOME_VERSION) showWelcome(true);
+} catch { /* Fail open to Home if local storage cannot be read. */ }

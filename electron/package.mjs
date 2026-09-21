@@ -29,14 +29,14 @@ await fs.writeFile(
   JSON.stringify({
     name: "let-it-out",
     productName: "Let It Out",
-    version: "0.2.1",
+    version: "0.2.2",
     main: "electron/main.cjs",
   }),
 );
 const out = path.join(
-  os.homedir(),
-  "Documents",
-  "RoomToWriteBuilds",
+  process.env.RTW_BUILD_ROOT
+    ? path.resolve(process.env.RTW_BUILD_ROOT)
+    : path.join(os.homedir(), "Documents", "RoomToWriteBuilds"),
   new Date().toISOString().replaceAll(":", "-"),
 );
 const paths = await packager({
