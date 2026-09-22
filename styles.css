@@ -1557,6 +1557,64 @@ body:not(.session-view) .site-header .text-button:hover {
 .landing .intro {
   max-width: 30ch;
 }
+.mac-download {
+  width: min(100%, 420px);
+  margin: 0 0 34px;
+  padding: 22px 0 26px;
+  border-top: 1px solid rgb(247 246 240 / 44%);
+  border-bottom: 1px solid rgb(247 246 240 / 22%);
+}
+.mac-download h2 {
+  max-width: 14ch;
+  margin: 0 0 9px;
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(31px, 3.1vw, 42px);
+  font-weight: 400;
+  line-height: .98;
+  letter-spacing: -.025em;
+}
+.download-meta,
+.download-detail,
+.download-warning,
+.download-intro,
+.install-steps,
+.try-browser {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.download-meta {
+  margin: 0 0 14px;
+  color: var(--sage);
+  font-weight: 600;
+}
+.download-intro { margin: 0 0 12px; max-width: 42ch; }
+.download-warning { margin: 0 0 15px; max-width: 45ch; color: var(--muted); }
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  min-width: min(100%, 308px);
+  min-height: 54px;
+  padding: 0 20px;
+  color: #1e2d23;
+  background: #f7f6f0;
+  border-radius: 6px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.download-button:hover { background: #e0e7d6; }
+.download-button:focus-visible,
+.try-browser:focus-visible,
+.landing-footer a:focus-visible { outline: 2px solid #f7f6f0; outline-offset: 4px; }
+.download-detail { margin: 9px 0 13px; color: var(--muted); }
+.install-steps { margin: 0 0 15px; color: var(--muted); }
+.install-steps summary { cursor: pointer; color: var(--ink); }
+.install-steps ol { margin: 8px 0 0; padding-left: 20px; }
+.try-browser,
+.landing-footer a { color: var(--ink); text-underline-offset: 3px; }
+.try-browser { display: inline-flex; gap: 8px; font-weight: 600; }
+.landing-footer { margin-top: 34px; padding-top: 18px; border-top: 1px solid rgb(247 246 240 / 22%); font-size: 13px; }
 @media (max-width: 800px) {
   .landing .photo-wash {
     background: linear-gradient(
@@ -1568,6 +1626,7 @@ body:not(.session-view) .site-header .text-button:hover {
   .landing-copy {
     width: 100%;
   }
+  .mac-download { width: 100%; }
 }
 @media (prefers-reduced-motion: no-preference) {
   body:not(.session-view) .landing-copy {

@@ -29,7 +29,7 @@ await fs.writeFile(
   JSON.stringify({
     name: "let-it-out",
     productName: "Let It Out",
-    version: "0.2.5",
+    version: "0.2.6",
     main: "electron/main.cjs",
   }),
 );
@@ -50,7 +50,8 @@ const paths = await packager({
   appCategoryType: "public.app-category.productivity",
   asar: true,
   overwrite: false,
-  icon: path.join(root, "electron/icon.icns"),
+  // @electron/packager resolves the macOS .icns suffix itself.
+  icon: path.join(root, "electron/icon"),
   prune: true,
 });
 await fs.writeFile(
