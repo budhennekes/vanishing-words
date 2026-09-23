@@ -1215,6 +1215,28 @@ body:not(.session-view) .site-header {
   padding: 0 clamp(28px, 5vw, 80px);
   gap: 16px;
 }
+body:not(.session-view) .arrival-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+body:not(.session-view) .header-download {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  color: #1e2d23;
+  background: #f7f6f0;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: background-color 140ms ease-out, transform 140ms ease-out;
+}
+body:not(.session-view) .header-download:hover { background: #e0e7d6; }
+body:not(.session-view) .header-download:active { transform: scale(.96); }
+body:not(.session-view) .header-download:focus-visible { outline: 2px solid #f7f6f0; outline-offset: 3px; }
 body:not(.session-view) .site-footer {
   display: none;
 }
@@ -1280,7 +1302,8 @@ body:not(.session-view) .site-footer {
 .mode-field legend {
   float: none;
   width: auto;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.5;
   margin-bottom: 10px;
 }
@@ -1311,15 +1334,15 @@ body:not(.session-view) .site-footer {
   align-items: flex-start;
   justify-content: center;
   height: auto;
-  min-height: 78px;
-  padding: 12px 0;
+  min-height: 66px;
+  padding: 9px 0;
   border: 0;
   border-radius: 0;
   color: var(--ink);
   white-space: normal;
   gap: 4px;
 }
-.mode-choices strong { font-size: 17px; font-weight: 500; }
+.mode-choices strong { font-size: 16px; font-weight: 550; }
 .mode-choices small { font-size: 13px; line-height: 1.5; color: var(--muted); }
 .mode-choices input:checked + span,
 .mode-choices label:hover > span {
@@ -1328,10 +1351,10 @@ body:not(.session-view) .site-footer {
 }
 .mode-choices label:hover { background: rgb(247 246 240 / 5%); }
 .mode-choices input:focus-visible + span { outline-offset: 4px; }
-#home-copy h1 { font-size: clamp(64px, 7vw, 88px); margin: 8px 0 16px; }
+#home-copy h1 { font-size: clamp(64px, 7vw, 88px); margin: 8px 0 10px; }
 #home-copy { padding-top: 28px; padding-bottom: 32px; }
 #home-copy .home-library { margin-top: 24px; padding-top: 20px; }
-#home-copy .intro { margin-bottom: 24px; max-width: 40ch; }
+#home-copy .intro { margin-bottom: 28px; max-width: 40ch; }
 #nav-mode { font-size: 12px; color: var(--muted); }
 #home-copy .mode-description { display: none; }
 .mode-description {
@@ -1453,6 +1476,8 @@ body:not(.session-view) .site-footer {
     height: 88px;
     padding: 0 28px;
   }
+  body:not(.session-view) .arrival-actions { gap: 2px; }
+  body:not(.session-view) .header-download { min-height: 40px; padding: 0 10px; font-size: 12px; }
   .landing-copy {
     width: 100%;
     padding: 30px 28px 40px;
@@ -2533,14 +2558,14 @@ body:not(.session-view) .landing .landscape img,
 body.completed #app::before { transition: opacity 180ms ease-out; }
 body[data-arrival-mode="rant"] .landing .landscape img { content: url("assets/ocean.jpg"); object-position: center 52%; }
 body[data-arrival-mode="words750"] .landing .landscape img { content: url("assets/dawn.jpg"); object-position: center 60%; }
-body[data-arrival-mode="brainstorm"] .landing .landscape img { content: url("assets/sky.jpg"); object-position: center 40%; }
+body[data-arrival-mode="brainstorm"] .landing .landscape img { content: url("assets/brainstorm-ocean.jpg"); object-position: center 48%; }
 @media (min-width: 801px) {
   body[data-arrival-mode="rant"] .landing .landscape img { content: url("assets/ocean-hd.jpg"); }
   body[data-arrival-mode="words750"] .landing .landscape img { content: url("assets/dawn-hd.jpg"); }
-  body[data-arrival-mode="brainstorm"] .landing .landscape img { content: url("assets/sky-hd.jpg"); }
+  body[data-arrival-mode="brainstorm"] .landing .landscape img { content: url("assets/brainstorm-ocean-hd.jpg"); }
   body.completed[data-arrival-mode="rant"] #app::before { background-image: linear-gradient(90deg, rgb(10 20 32 / 82%), rgb(10 20 32 / 34%)), url("assets/ocean-hd.jpg"); }
   body.completed[data-arrival-mode="words750"] #app::before { background-image: linear-gradient(90deg, rgb(20 15 40 / 82%), rgb(20 15 40 / 32%)), url("assets/dawn-hd.jpg"); }
-  body.completed[data-arrival-mode="brainstorm"] #app::before { background-image: linear-gradient(90deg, rgb(8 22 48 / 80%), rgb(8 22 48 / 28%)), url("assets/sky-hd.jpg"); }
+  body.completed[data-arrival-mode="brainstorm"] #app::before { background-image: linear-gradient(90deg, rgb(8 22 48 / 80%), rgb(8 22 48 / 28%)), url("assets/brainstorm-ocean-hd.jpg"); }
 }
 body.completed[data-arrival-mode="rant"] #app::before { background-image: linear-gradient(90deg, rgb(10 20 32 / 82%), rgb(10 20 32 / 34%)), url("assets/ocean.jpg"); }
 body.completed[data-arrival-mode="words750"] #app::before { background-image: linear-gradient(90deg, rgb(20 15 40 / 82%), rgb(20 15 40 / 32%)), url("assets/dawn.jpg"); }

@@ -103,10 +103,8 @@ test('setup exposes independent labeled settings and 750 only offers optional pa
 });
 
 for (const mode of ["journal", "rant", "words750"]) {
-  test(`${mode} is selectable after onboarding and returning Home`, async t => {
+  test(`${mode} is selectable from the direct arrival screen and returning Home`, async t => {
     const p = await fresh(t);
-    await p.locator('#welcome-next').click();
-    await p.locator('#welcome-start').click();
     for (const choice of ['journal', 'rant', 'words750']) {
       assert.equal(await visible(p, `[name="mode"][value="${choice}"]`), true);
     }
@@ -321,34 +319,6 @@ test("another tab cannot resurrect deleted active writing through autosave, relo
   assert.equal(await visible(other, "#continue-note-button"), false);
 });
 
-test("reduced-motion preview cancels pending disappearance on typing and discards sample on skip", async t => {
-  const note = fixture();
-  const p = await fresh(t, { [PREFIX + note.id]: JSON.stringify(note), [SEEN]: "1" });
-  await p.emulateMedia({ reducedMotion: "reduce" });
-  await p.clock.install(); await p.reload();
-  await p.locator("#demo-start").click();
-  await p.clock.runFor(3100);
-  await p.locator("#demo-editor").fill("Synthetic typing interrupts a fading word");
-  await p.clock.runFor(1000);
-  assert.equal(await p.locator("#demo-editor").inputValue(), "Synthetic typing interrupts a fading word");
-  assert.equal(await p.locator("#demo-mirror").innerText(), "");
-  await p.locator("#welcome-skip").click();
-  await p.clock.runFor(10000);
-  assert.equal(await p.locator("#demo-editor").inputValue(), "");
-  assert.deepEqual(await records(p), [note]);
-});
-
-test("practice text is dark enough to read on its light paper", async t => {
-  const p = await fresh(t);
-  await p.locator("#demo-start").click();
-  const colors = await p.locator("#demo-editor").evaluate(el => ({ ink: getComputedStyle(el).color, paper: getComputedStyle(el.parentElement).backgroundColor }));
-  function luminance(color) {
-    const rgb = color.match(/[\d.]+/g).slice(0,3).map(Number).map(v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; });
-    return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
-  }
-  const a = luminance(colors.ink), b = luminance(colors.paper);
-  assert.ok((Math.max(a,b) + .05) / (Math.min(a,b) + .05) >= 4.5, JSON.stringify(colors));
-});
 
 test("six static washes preserve writing and clocks, stay readable, and restore the saved plain tone", async t => {
   const p = await fresh(t, { [SEEN]: "2" });
@@ -522,106 +492,38 @@ test("Matrix session options remain legible and every allowed ink stays high con
   assert.ok(contrast(controls.focus, controls.panel) >= 3, JSON.stringify(controls));
 });
 
-test("onboarding teaches disappearing words with an isolated accelerated sample", async t => {
+test("arrival puts writing setup first and keeps the Mac release as a direct header link", async t => {
   const p = await fresh(t);
-  await p.clock.install(); await p.reload();
-  await p.locator("#demo-start").click();
-  const sample = await p.locator("#demo-editor").inputValue();
-  await p.clock.runFor(2900);
-  assert.equal(await p.locator("#demo-editor").inputValue(), sample);
-  await p.clock.runFor(900);
-  assert.notEqual(await p.locator("#demo-editor").inputValue(), sample);
-  await p.locator("#demo-editor").fill("Practice words stay while typing");
-  await p.clock.runFor(2900);
-  assert.equal(await p.locator("#demo-editor").inputValue(), "Practice words stay while typing");
-  assert.deepEqual(await records(p), []);
-  assert.equal(await p.locator("#grace-value").inputValue(), "15");
-  await p.locator("#welcome-next").click();
-  await p.clock.runFor(10000);
-  const explanation = await p.locator("#welcome-retention").innerText();
-  for (const text of ["Session duration is separate", "15 seconds", "No recovery", "750 Words", "no timer", "not a backup", "not encrypted"]) assert.ok(explanation.includes(text));
-  assert.equal(await p.locator("#demo-editor").inputValue(), "");
-  await p.locator("#welcome-start").click();
+  assert.equal(await visible(p, "#welcome"), false);
   assert.equal(await visible(p, "#home-copy"), true);
+  assert.equal(await p.locator("#home-copy").evaluate(el => {
+    const heading = el.querySelector("#hero-title");
+    const mode = el.querySelector(".mode-field");
+    return Boolean(heading.compareDocumentPosition(mode) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }), true);
+  const download = p.locator(".header-download");
+  assert.equal(await download.innerText(), "Download for Mac");
+  assert.match(await download.getAttribute("href"), /github\.com\/budhennekes\/vanishing-words\/releases\/download\/v0\.2\.6\/Let-It-Out-0\.2\.6-arm64\.zip$/);
+  assert.equal(await p.locator(".mac-download").count(), 0);
   assert.deepEqual(await records(p), []);
   await p.locator("#begin-button").click();
   assert.equal(await p.locator("#editor").inputValue(), "");
-  await p.clock.runFor(1000);
+  await p.locator("#editor").fill("A first word");
+  await p.waitForTimeout(800);
   assert.equal((await records(p))[0].grace, 15000);
 });
 
-test("welcome is scenic, skippable, remembered, replayable and leads through the chooser", async t => {
+test("arrival is scenic, direct, and leads into a focused writing session", async t => {
   const p = await fresh(t);
-  assert.equal(await visible(p, "#welcome"), true);
-  assert.equal(await visible(p, "#home-copy"), false);
-  const copy = await p.locator("#welcome").innerText();
-  for (const text of ["Keep writing", "disappearing", "3-second", "15-second", "never saved"]) assert.ok(copy.includes(text));
   assert.equal(await p.locator(".landscape img").evaluate(el => el.complete && el.naturalWidth > 0), true);
   await p.waitForTimeout(550);
-  await p.screenshot({ path: evidence + "welcome-wide.png", fullPage: true });
-  await p.locator("#welcome-skip").click();
-  assert.equal(await visible(p, "#home-copy"), true);
-  assert.equal(await p.evaluate(key => localStorage.getItem(key), SEEN), "2");
-  await p.reload();
-  assert.equal(await visible(p, "#welcome"), false);
-  await p.locator("#about-button").click();
-  await p.locator("#replay-welcome").click();
-  assert.equal(await visible(p, "#welcome"), true);
-  await p.locator("#welcome-next").click();
-  await p.locator("#welcome-start").click();
-  assert.equal(await visible(p, "#home-copy"), true);
-  assert.deepEqual(await records(p), []);
-  await p.locator("#begin-button").click();
-  assert.equal(await p.locator("#editor").inputValue(), "");
+  await p.screenshot({ path: evidence + "arrival-wide.png", fullPage: true });
+  await p.keyboard.press("Control+Enter");
   assert.equal(await p.locator("#editor").evaluate(el => el === document.activeElement && !el.readOnly && !el.spellcheck), true);
   await p.waitForTimeout(100);
-  assert.equal((await records(p))[0].grace, 15000);
   assert.equal((await records(p))[0].status, "ready");
   assert.equal(await p.locator("#page-timer").innerText(), "10:00 left");
   await p.screenshot({ path: evidence + "blank-editor.png" });
-});
-
-test("keyboard start dismisses welcome permanently and hidden setup never takes focus", async t => {
-  const p = await fresh(t);
-  await p.locator("#welcome-title").focus();
-  await p.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
-  assert.equal(await p.evaluate(() => document.activeElement.id), "demo-start");
-  await p.keyboard.press("Enter");
-  assert.equal(await p.evaluate(() => document.activeElement.id), "demo-editor");
-  await p.locator("#welcome-next").focus();
-  await p.keyboard.press("Enter");
-  await p.locator("#welcome-start").focus();
-  await p.keyboard.press("Enter");
-  assert.equal(await visible(p, "#home-copy"), true);
-  await p.keyboard.press("Control+Enter");
-  assert.equal(await p.locator("#editor").evaluate(el => el === document.activeElement), true);
-  await revealNav(p);
-  await p.locator("#nav-home").click();
-  assert.equal(await visible(p, "#welcome"), false);
-  await p.reload();
-  assert.equal(await visible(p, "#welcome"), false);
-  const shortcut = await fresh(t);
-  await shortcut.keyboard.press("Control+Enter");
-  assert.equal(await visible(shortcut, "#home-copy"), true);
-  assert.deepEqual(await records(shortcut), []);
-  await shortcut.keyboard.press("Control+Enter");
-  assert.equal(await visible(shortcut, "#editor"), true);
-  await revealNav(shortcut);
-  await shortcut.locator("#nav-home").click();
-  assert.equal(await visible(shortcut, "#welcome"), false);
-});
-
-test("upgrade shows new onboarding once without changing existing or unreadable notes", async t => {
-  for (const raw of [JSON.stringify(fixture()), "unreadable synthetic fixture"]) {
-    const key = PREFIX + "upgrade";
-    const p = await fresh(t, { [key]: raw, [SEEN]: "1" });
-    assert.equal(await visible(p, "#welcome"), true);
-    await p.locator("#welcome-skip").click();
-    await p.reload();
-    assert.equal(await visible(p, "#welcome"), false);
-    assert.equal(await p.evaluate(key => localStorage.getItem(key), key), raw);
-    assert.equal(await visible(p, "#begin-button"), true);
-  }
 });
 
 test("spelling opt-in survives reload, does not replace textarea or change clocks, and respects IME", async t => {
@@ -760,17 +662,15 @@ test("Rant Let go still animates and leaves neither saved writing nor recovery",
   assert.equal(await visible(p, "#continue-saved-note"), false);
 });
 
-test("welcome and primary action remain reachable at narrow and intermediate widths", async t => {
+test("arrival and primary action remain reachable at narrow and intermediate widths", async t => {
   for (const [name, viewport] of [["narrow", { width: 390, height: 844 }], ["medium", { width: 900, height: 640 }]]) {
     const p = await fresh(t, {}, viewport);
     await p.waitForTimeout(550);
     assert.equal(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-    await p.screenshot({ path: evidence + `welcome-${name}.png`, fullPage: true });
-    await p.locator("#welcome-next").click();
-    await p.locator("#welcome-start").click();
-  assert.equal(await visible(p, "#home-copy"), true);
-  assert.deepEqual(await records(p), []);
-  await p.locator("#begin-button").click();
+    await p.screenshot({ path: evidence + `arrival-${name}.png`, fullPage: true });
+    assert.equal(await visible(p, "#home-copy"), true);
+    assert.deepEqual(await records(p), []);
+    await p.locator("#begin-button").click();
     assert.equal(await p.locator("#editor").evaluate(el => el === document.activeElement), true);
   }
 });

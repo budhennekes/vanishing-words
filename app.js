@@ -1591,7 +1591,7 @@ $("welcome-skip").addEventListener("click", chooseWritingMode);
 $("welcome-start").addEventListener("click", chooseWritingMode);
 $("replay-welcome").addEventListener("click", () => {
   $("about-dialog").close();
-  if (!state) showWelcome(true);
+  if (!state) $("setup-form").scrollIntoView({ block: "start", behavior: "smooth" });
 });
 applyAppearance();
 setupChanged();
@@ -1619,8 +1619,7 @@ $("page-navigation").addEventListener("focusin", () => setNavRevealed(true));
 $("page-navigation").addEventListener("focusout", (e) => {
   if (!$("page-navigation").contains(e.relatedTarget)) setNavRevealed(false);
 });
-try {
-  // This core-behavior introduction is shown once on upgrade as well.
-  // Only the separate welcome marker changes, never existing writing.
-  if (localStorage.getItem(WELCOME_KEY) !== WELCOME_VERSION) showWelcome(true);
-} catch { /* Fail open to Home if local storage cannot be read. */ }
+// Start in the product. The writing setup is the only onboarding needed.
+// Keep the old welcome DOM isolated for backwards-compatible help/replay wiring.
+showWelcome(false);
+rememberWelcome();
