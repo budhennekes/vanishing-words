@@ -65,6 +65,43 @@ function fixture(mode = "journal", completed = false) {
   return transition(s, { type: completed ? "finish" : "suspend" }, 182000);
 }
 
+for (const viewport of [{ width: 390, height: 844 }, { width: 800, height: 900 }, { width: 1440, height: 900 }]) {
+  test(`compact homepage keeps download, disclosure and browser entry usable at ${viewport.width}px`, async t => {
+    const p = await fresh(t, { [SEEN]: '2' }, viewport);
+    await p.evaluate(() => document.fonts.ready);
+    await p.waitForTimeout(650);
+    assert.equal(await p.locator('#home-copy h1').count(), 1);
+    assert.equal(await p.locator('.mac-download h2').count(), 0);
+    assert.equal(await p.locator('.download-button').getAttribute('href'), 'https://github.com/budhennekes/vanishing-words/releases/download/v0.2.6/Let-It-Out-0.2.6-arm64.zip');
+    assert.equal(await p.locator('#download-compatibility').innerText(), 'Apple silicon · Preview');
+    assert.equal(await p.locator('#download-warning').isVisible(), true);
+    assert.equal(await p.locator('.install-steps').evaluate(e => e.open), false);
+    const bounds = await p.locator('.download-button').boundingBox();
+    assert.ok(bounds.height >= 44 && bounds.y + bounds.height < viewport.height);
+    assert.equal(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await p.screenshot({ path: `${evidence}homepage-${viewport.width}.png` });
+    await p.locator('.download-button').focus();
+    // macOS WebKit uses Option-Tab for full keyboard navigation.
+    const nextControl = browserName === 'webkit' ? 'Alt+Tab' : 'Tab';
+    await p.keyboard.press(nextControl);
+    assert.equal(await p.evaluate(() => document.activeElement.id), 'try-browser');
+    await p.keyboard.press(nextControl);
+    assert.equal(await p.evaluate(() => document.activeElement.tagName), 'SUMMARY');
+    await p.keyboard.press('Enter');
+    assert.equal(await p.locator('.install-steps').evaluate(e => e.open), true);
+    assert.equal(await p.locator('.install-steps li').count(), 3);
+    assert.match(await p.locator('.install-steps').innerText(), /Mac notes and browser notes stay separate/);
+    await p.keyboard.press('Space');
+    assert.equal(await p.locator('.install-steps').evaluate(e => e.open), false);
+    await p.locator('#try-browser').click();
+    assert.equal(new URL(p.url()).hash, '#setup-form');
+    assert.equal(await p.locator('#setup-form input[name="mode"]').count(), 4);
+    await p.locator('[name="mode"][value="brainstorm"]').check();
+    await p.locator('#begin-button').click();
+    assert.equal(await p.locator('#brainstorm-editor').isVisible(), true);
+  });
+}
+
 test('setup exposes independent labeled settings and 750 only offers optional pause erasing', async t => {
   const p = await fresh(t, { [SEEN]: '2' }, {width:390,height:844});
   const duration = p.getByRole('spinbutton', {name:'Write for', exact:true});
